@@ -15,6 +15,9 @@
 -   Performs sentiment analysis to prioritize highly critical or
     emotionally urgent complaints.
 
+
+- Could be done easy gemini/offline model 
+                                       -Ryder
 ------------------------------------------------------------------------
 
 ## 2. Live Complaint Heatmap (Smart City View)
