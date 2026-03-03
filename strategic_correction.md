@@ -8,7 +8,7 @@ Purpose: Identify over-scope, unrealistic assumptions, and refine PS-CRM into a 
 # SECTION 1 — Infrastructure & Architecture Overkill
 
 ## File Concerned:
-PRD.md (System Architecture Section)
+[docs/PRD.md](docs/PRD.md) (System Architecture Section)
 
 ---
 
