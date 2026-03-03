@@ -53,6 +53,9 @@ but we can use selenium to interface with WhatsApp web and there are 2-3 differe
 -   Citizen satisfaction ratings.
 -   Public leaderboard for transparency.
 
+
+
+
 ------------------------------------------------------------------------
 
 ## 5. Citizen Trust & Credibility Score
@@ -62,6 +65,11 @@ but we can use selenium to interface with WhatsApp web and there are 2-3 differe
 -   Encourages responsible civic participation.
 
 
+
+
+
+- use binary 1/0 to give fake/good 
+I kinda have a model ready for that
 
 ------------------------------------------------------------------------
 
@@ -83,6 +91,9 @@ but we can use selenium to interface with WhatsApp web and there are 2-3 differe
 -   Enables proactive administrative planning.
 
 
+
+
+
 - we can probably train a model on this instead of rather using gemini, I think training would be better 
 ------------------------------------------------------------------------
 
@@ -92,6 +103,10 @@ but we can use selenium to interface with WhatsApp web and there are 2-3 differe
 -   Instant escalation to higher authorities.
 -   SMS/Email alerts for urgent cases.
 -   High-priority auto-marking for critical mass complaints.
+
+
+
+
 
 - train a model for this as well..... :)
 
@@ -103,6 +118,9 @@ but we can use selenium to interface with WhatsApp web and there are 2-3 differe
 -   Most voted issues appear at the top.
 -   Encourages community-driven governance.
 
+
+-👍👍
+
 ------------------------------------------------------------------------
 
 ## 10. Gamification for Officials
@@ -111,5 +129,10 @@ but we can use selenium to interface with WhatsApp web and there are 2-3 differe
 -   Fastest resolution awards.
 -   Incentive tracking dashboard.
 -   Encourages accountability and efficiency.
+
+
+
+
+- could be kept as optional but not priority 
 
 ------------------------------------------------------------------------
