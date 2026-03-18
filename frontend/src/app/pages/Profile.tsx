@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  Bell,
-  ChevronRight,
-  LogOut,
-  Mail,
-  MapPin,
-  Shield,
-} from "lucide-react";
+import { Bell, ChevronRight, LogOut, Mail, MapPin, Shield } from "lucide-react";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
 
@@ -30,16 +23,11 @@ const badgeTemplates = [
   },
   {
     id: 2,
-    name: "Verified Citizen",
-    description: "Get 5 complaints verified",
+    name: "Problem Solver",
+    description: "Submit 5 complaints",
   },
   {
     id: 3,
-    name: "Community Helper",
-    description: "Help verify 10 complaints",
-  },
-  {
-    id: 4,
     name: "Ward Champion",
     description: "Become a strong local contributor",
   },
@@ -51,9 +39,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [userStats, setUserStats] = useState({
     reported: 0,
-    verified: 0,
     resolved: 0,
-    confirmations: 0,
     reputationScore: 0,
   });
   const [currentUser, setCurrentUser] = useState<any>({
@@ -90,19 +76,9 @@ export default function Profile() {
             setComplaints(userComplaints);
             setUserStats({
               reported: userComplaints.length,
-              verified: userComplaints.filter(
-                (complaint) =>
-                  !["Submitted", "Pending Verification"].includes(
-                    complaint.status,
-                  ),
-              ).length,
               resolved: userComplaints.filter((complaint) =>
                 ["Resolved", "Closed"].includes(complaint.status),
               ).length,
-              confirmations: userComplaints.reduce(
-                (sum, complaint) => sum + (complaint.confirmations || 0),
-                0,
-              ),
               reputationScore:
                 userComplaints.length * 10 +
                 userComplaints.filter(
@@ -134,9 +110,8 @@ export default function Profile() {
         ...badge,
         earned:
           (badge.id === 1 && userStats.reported > 0) ||
-          (badge.id === 2 && userStats.verified >= 5) ||
-          (badge.id === 3 && userStats.confirmations >= 10) ||
-          (badge.id === 4 && userStats.resolved >= 10),
+          (badge.id === 2 && userStats.reported >= 5) ||
+          (badge.id === 3 && userStats.resolved >= 10),
       })),
     [userStats],
   );
@@ -210,12 +185,14 @@ export default function Profile() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {[
           { label: "Reported", value: userStats.reported },
-          { label: "Verified", value: userStats.verified },
           { label: "Resolved", value: userStats.resolved },
-          { label: "Confirmations", value: userStats.confirmations },
+          {
+            label: "Completion rate",
+            value: `${userStats.reported ? Math.round((userStats.resolved / userStats.reported) * 100) : 0}%`,
+          },
         ].map((item) => (
           <div
             key={item.label}
@@ -246,13 +223,17 @@ export default function Profile() {
               complaints.slice(0, 5).map((complaint) => (
                 <button
                   key={complaint.id}
-                  onClick={() => navigate(`/dashboard/complaints/${complaint.id}`)}
+                  onClick={() =>
+                    navigate(`/dashboard/complaints/${complaint.id}`)
+                  }
                   className="flex w-full items-start justify-between gap-4 px-6 py-4 text-left hover:bg-sky-50/50"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold text-slate-900">
                       {complaint.category}
-                      {complaint.subcategory ? ` - ${complaint.subcategory}` : ""}
+                      {complaint.subcategory
+                        ? ` - ${complaint.subcategory}`
+                        : ""}
                     </div>
                     <div className="mt-1 text-sm text-slate-500">
                       {complaint.address || "Address unavailable"}

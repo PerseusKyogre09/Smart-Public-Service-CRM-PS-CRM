@@ -6,8 +6,6 @@ import { account } from "../appwrite";
 
 const statusColors: Record<string, string> = {
   Submitted: "bg-slate-100 text-slate-700",
-  "Pending Verification": "bg-amber-100 text-amber-800",
-  Verified: "bg-sky-100 text-sky-700",
   Assigned: "bg-sky-100 text-sky-700",
   "In Progress": "bg-blue-100 text-blue-700",
   Resolved: "bg-emerald-100 text-emerald-700",
@@ -16,8 +14,10 @@ const statusColors: Record<string, string> = {
 };
 
 const priorityLabel = (score: number) => {
-  if (score >= 0.75) return { label: "High", className: "bg-red-50 text-red-700" };
-  if (score >= 0.4) return { label: "Medium", className: "bg-amber-50 text-amber-700" };
+  if (score >= 0.75)
+    return { label: "High", className: "bg-red-50 text-red-700" };
+  if (score >= 0.4)
+    return { label: "Medium", className: "bg-amber-50 text-amber-700" };
   return { label: "Low", className: "bg-slate-100 text-slate-700" };
 };
 
@@ -76,8 +76,6 @@ export default function MyComplaints() {
   const allStatuses = [
     "All",
     "Submitted",
-    "Pending Verification",
-    "Verified",
     "Assigned",
     "In Progress",
     "Resolved",
@@ -133,7 +131,8 @@ export default function MyComplaints() {
   const summary = {
     total: complaints.length,
     active: complaints.filter(
-      (complaint) => !["Resolved", "Closed", "Rejected"].includes(complaint.status),
+      (complaint) =>
+        !["Resolved", "Closed", "Rejected"].includes(complaint.status),
     ).length,
     resolved: complaints.filter((complaint) =>
       ["Resolved", "Closed"].includes(complaint.status),
@@ -254,7 +253,9 @@ export default function MyComplaints() {
             return (
               <button
                 key={complaint.id}
-                onClick={() => navigate(`/dashboard/complaints/${complaint.id}`)}
+                onClick={() =>
+                  navigate(`/dashboard/complaints/${complaint.id}`)
+                }
                 className="w-full rounded-[24px] border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/30"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -262,7 +263,9 @@ export default function MyComplaints() {
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-base font-semibold text-slate-900">
                         {complaint.category || "Complaint"}
-                        {complaint.subcategory ? ` - ${complaint.subcategory}` : ""}
+                        {complaint.subcategory
+                          ? ` - ${complaint.subcategory}`
+                          : ""}
                       </div>
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColors[complaint.status] || "bg-slate-100 text-slate-700"}`}

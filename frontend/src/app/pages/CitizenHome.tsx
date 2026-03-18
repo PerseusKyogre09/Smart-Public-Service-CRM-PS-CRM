@@ -15,8 +15,6 @@ import { account } from "../appwrite";
 
 const statusColor: Record<string, string> = {
   Submitted: "bg-slate-100 text-slate-700",
-  "Pending Verification": "bg-amber-100 text-amber-800",
-  Verified: "bg-sky-100 text-sky-700",
   Assigned: "bg-sky-100 text-sky-700",
   "In Progress": "bg-blue-100 text-blue-700",
   Resolved: "bg-emerald-100 text-emerald-700",
@@ -86,7 +84,8 @@ export default function CitizenHome() {
       .get()
       .then((currentUser) => {
         setUser({
-          name: currentUser.name || currentUser.email?.split("@")[0] || "Citizen",
+          name:
+            currentUser.name || currentUser.email?.split("@")[0] || "Citizen",
           email: currentUser.email,
           uid: currentUser.$id,
         });
@@ -120,14 +119,6 @@ export default function CitizenHome() {
     (complaint) =>
       !["Resolved", "Closed"].includes(complaint.status) &&
       (complaint.distance_km || 1) <= 5,
-  ).length;
-  const verificationCount = complaints.filter(
-    (complaint) =>
-      ["Submitted", "Pending Verification"].includes(complaint.status) &&
-      complaint.reporterId !== user.uid &&
-      complaint.userId !== user.uid &&
-      !(complaint.verifiedBy || []).includes(user.uid) &&
-      (userState ? complaint.state === userState : true),
   ).length;
 
   const recentComplaints = [...userComplaints].slice(0, 5);
@@ -189,9 +180,7 @@ export default function CitizenHome() {
             <div className="flex flex-wrap gap-3 text-sm text-slate-600">
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
                 <LocateFixed className="h-4 w-4 text-sky-600" />
-                {coords
-                  ? "Nearby updates enabled"
-                  : "Location not shared yet"}
+                {coords ? "Nearby updates enabled" : "Location not shared yet"}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
                 <ShieldCheck className="h-4 w-4 text-sky-600" />
@@ -340,24 +329,9 @@ export default function CitizenHome() {
         <div className="space-y-6">
           <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
-              What needs attention
+              Your engagement
             </h2>
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl bg-sky-50 p-4">
-                <div className="text-sm font-medium text-slate-600">
-                  Complaints waiting for your verification
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-900">
-                  {verificationCount}
-                </div>
-                <button
-                  onClick={() => navigate("/dashboard/complaints")}
-                  className="mt-3 text-sm font-medium text-sky-700 hover:text-sky-800"
-                >
-                  Review complaints
-                </button>
-              </div>
-
               <div className="rounded-2xl border border-slate-200 p-4">
                 <div className="text-sm font-medium text-slate-600">
                   Your completion rate
@@ -365,7 +339,9 @@ export default function CitizenHome() {
                 <div className="mt-2 flex items-end gap-2">
                   <div className="text-2xl font-semibold text-slate-900">
                     {userComplaints.length
-                      ? Math.round((resolvedCount / userComplaints.length) * 100)
+                      ? Math.round(
+                          (resolvedCount / userComplaints.length) * 100,
+                        )
                       : 0}
                     %
                   </div>
