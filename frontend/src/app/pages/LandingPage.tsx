@@ -191,42 +191,42 @@ const features = [
   {
     icon: Zap,
     title: "AI Priority Scoring",
-    desc: "Every complaint is instantly scored using location sensitivity, image confidence, and community confirmations — ensuring critical issues are fast-tracked automatically.",
+    desc: "Every complaint is instantly scored using location sensitivity, image confidence, and category weight — ensuring critical issues are fast-tracked automatically.",
     color: "text-violet-500",
     bg: "bg-violet-50",
   },
   {
     icon: MapPin,
-    title: "Duplicate Detection",
-    desc: "Our system detects similar complaints within 100m radius using text similarity and image hashing, merging them to boost priority and cut queue clutter.",
+    title: "Dual-Path Verification",
+    desc: "Our system combines human verification from nearby citizens with mandatory GPS-fenced officer uploads, creating an immutable audit trail for every fix.",
     color: "text-blue-500",
     bg: "bg-blue-50",
   },
   {
     icon: Bell,
     title: "Real-Time SLA Tracking",
-    desc: "Configurable SLA deadlines per category. Automated escalation when deadlines approach. Citizens see countdown timers — full transparency throughout.",
+    desc: "Strict resolution deadlines per category (12h to 120h). Automated escalation when deadlines approach. Citizens see live status — full transparency throughout.",
     color: "text-amber-500",
     bg: "bg-amber-50",
   },
   {
     icon: Shield,
-    title: "GPS-Proof Resolution",
-    desc: "Field officers must upload resolution proof within 150m of the complaint location — ensuring genuine closure. Immutable audit trail for every action.",
+    title: "GPS-Verified Resolution",
+    desc: "Field officers can only upload resolution proof within 150m of the complaint location — no false closures. System holds proof of work for every action.",
     color: "text-emerald-500",
     bg: "bg-emerald-50",
   },
   {
     icon: BarChart3,
     title: "Analytics & Heatmaps",
-    desc: "Ward-level complaint density heatmaps, KPI dashboards (MTTA, MTTR, SLA compliance), predictive anomaly detection, and CSV/PDF exports.",
+    desc: "Ward-level complaint density heatmaps, KPI dashboards (MTTA, MTTR, SLA compliance), and department-wise performance tracking for officials.",
     color: "text-rose-500",
     bg: "bg-rose-50",
   },
   {
     icon: Award,
-    title: "Reputation & Rewards",
-    desc: "Citizens earn points for reporting and resolving issues. Gamified badges, ward leaderboards, and a Phase 2 civic reward marketplace to incentivize active reporting.",
+    title: "Regional Leaderboards",
+    desc: "Citizens earn points and climb state-level leaderboards by reporting genuine issues and verifying others' solutions. Civic credits represent your contribution to Delhi and UP.",
     color: "text-orange-500",
     bg: "bg-orange-50",
   },
@@ -236,7 +236,7 @@ const steps = [
   {
     step: "01",
     title: "Report in 60 Seconds",
-    desc: "Open the app, snap a photo. AI suggests the category. GPS auto-fills your location. Hit submit — your Complaint ID arrives instantly via SMS.",
+    desc: "Open the app, snap a photo. AI suggests the category. GPS auto-fills your location. Hit submit — your Complaint ID arrives instantly.",
   },
   {
     step: "02",
@@ -246,28 +246,28 @@ const steps = [
   {
     step: "03",
     title: "Track to Resolution",
-    desc: "Watch your complaint move through a live status timeline. Get push/SMS updates. Escalate if SLA is breached. Rate the resolution on closure.",
+    desc: "Watch your complaint move through a live status timeline. Get push updates. Escalate if SLA is breached. Rate the resolution on closure.",
   },
 ];
 
 const testimonials = [
   {
     name: "Anjali Desai",
-    ward: "Ward 7, Mumbai",
-    text: "I reported a garbage overflow and it was cleared in 8 hours. The before/after card was amazing — I shared it on my building WhatsApp group!",
+    ward: "New Delhi, NCR",
+    text: "I reported a garbage overflow and it was cleared in 8 hours. The before/after card was amazing — I could track the progress live!",
     rating: 5,
-    badge: "🏆 Active Contributor",
+    badge: "🔎 Verified Contributor",
   },
   {
     name: "Rajesh Kumar",
-    ward: "Ward 4, Pune",
+    ward: "Lucknow, UP",
     text: "Finally a platform where our complaints actually get tracked and resolved. The SLA countdown keeps officials accountable.",
     rating: 5,
     badge: "🛠️ Problem Solver",
   },
   {
     name: "Priya Nair",
-    ward: "Ward 2, Bangalore",
+    ward: "Noida, UP",
     text: "The AI category suggestion is spot on. I just pointed my phone at the pothole and it knew exactly what it was. Super fast reporting.",
     rating: 5,
     badge: "🌱 First Reporter",
@@ -396,66 +396,53 @@ export default function LandingPage() {
             </thead>
             <tbody className="text-slate-600">
               <tr className="border-b">
-                <td className="py-2">Garbage overflow</td>
-                <td className="text-right">24 Hours</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">Streetlight failure</td>
-                <td className="text-right">48 Hours</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">Pothole repair</td>
-                <td className="text-right">7 Days</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">Water supply</td>
+                <td className="py-2">Emergency Safety</td>
                 <td className="text-right">12 Hours</td>
+              </tr>
+              <tr className="border-b">
+                <td className="py-2">Water & Sanitation</td>
+                <td className="text-right">24-48 Hours</td>
+              </tr>
+              <tr className="border-b">
+                <td className="py-2">Streetlight Failure</td>
+                <td className="text-right">72 Hours</td>
+              </tr>
+              <tr className="border-b">
+                <td className="py-2">Pothole Repair</td>
+                <td className="text-right">96 Hours</td>
+              </tr>
+              <tr className="border-b">
+                <td className="py-2">Construction & Other</td>
+                <td className="text-right">120 Hours</td>
               </tr>
             </tbody>
           </table>
         </div>
       ),
     },
-    "Report via WhatsApp": {
-      title: "Report via WhatsApp",
-      icon: MessageSquare,
-      desc: "Instant reporting through your favorite chat app.",
+    "Help Center": {
+      title: "Help Center",
+      icon: LifeBuoy,
+      desc: "Need assistance? We're here to help.",
       content: (
         <div className="space-y-4 pt-2">
-          <p className="text-sm text-slate-600">
-            Reporting is as easy as sending a message. No app download needed.
-          </p>
-          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-            <h4 className="text-emerald-900 font-bold text-sm mb-1">
-              WhatsApp Hotline
-            </h4>
-            <p className="text-emerald-700 text-lg font-mono tracking-wider">
-              +91 98765 43210
-            </p>
-          </div>
-          <div className="space-y-3">
-            <div className="flex gap-3 items-start">
-              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold shrink-0">
-                1
-              </div>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+              <p className="font-medium text-sm">How to report an issue?</p>
               <p className="text-xs text-slate-500">
-                Save the number and send 'Hi' to start.
+                Click 'Report' and snap a photo. AI handles the rest.
               </p>
             </div>
-            <div className="flex gap-3 items-start">
-              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold shrink-0">
-                2
-              </div>
+            <div className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+              <p className="font-medium text-sm">Tracking my complaint</p>
               <p className="text-xs text-slate-500">
-                Snap a photo and share your location.
+                View status on your Dashboard.
               </p>
             </div>
-            <div className="flex gap-3 items-start">
-              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold shrink-0">
-                3
-              </div>
+            <div className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+              <p className="font-medium text-sm">What are Civic Credits?</p>
               <p className="text-xs text-slate-500">
-                AI processes it and sends your Complaint ID.
+                Points earned for every verified report fixed by the city.
               </p>
             </div>
           </div>
@@ -495,28 +482,29 @@ export default function LandingPage() {
       ),
     },
     "Civic Impact": {
-      title: "Civic Impact Report",
+      title: "Regional Coverage Report",
       icon: BarChart3,
-      desc: "Transparency in action. See the change.",
+      desc: "Precision governance across jurisdictions.",
       content: (
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">4,821</p>
+              <p className="text-2xl font-bold text-blue-600">NCR</p>
               <p className="text-[10px] text-blue-500 uppercase font-semibold">
-                Issues Resolved
+                Strategic Focus
               </p>
             </div>
             <div className="p-3 bg-emerald-50 rounded-lg">
-              <p className="text-2xl font-bold text-emerald-600">12k+</p>
+              <p className="text-2xl font-bold text-emerald-600">UP</p>
               <p className="text-[10px] text-emerald-500 uppercase font-semibold">
-                Active Citizens
+                State Coverage
               </p>
             </div>
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
-            In the last 12 months, CivicPulse has reduced the average resolution
-            time (MTTR) by 42% across 14 municipal wards.
+            CivicPulse prototype is specifically optimized for regional urban
+            centers and inter-state corridors, ensuring 100% GPS-verified
+            resolution trails.
           </p>
         </div>
       ),
@@ -763,10 +751,10 @@ export default function LandingPage() {
               className="flex flex-wrap gap-8"
             >
               {[
-                { value: "4,821", label: "Issues Fixed" },
-                { value: "4.9★", label: "Citizen Trust" },
-                { value: "94%", label: "SLA Success" },
-                { value: "<45s", label: "Fast Report" },
+                { value: "08", label: "Categories" },
+                { value: "SLA", label: "Enforced" },
+                { value: "Delhi/UP", label: "Precise Coverage" },
+                { value: "GPS", label: "Verification" },
               ].map((s) => (
                 <div key={s.label}>
                   <div className="text-2xl font-[800] text-white">
@@ -794,11 +782,11 @@ export default function LandingPage() {
         <div className="flex gap-12 animate-[slide_30s_linear_infinite] whitespace-nowrap">
           {Array(4)
             .fill([
-              "🚀 Ward 7 resolved 124 complaints this week",
-              "⚡ AI prioritized 42 new street light issues",
-              "🛠️ Pothole on MG Road fixed in 14 hours",
-              "🔍 94% SLA compliance citywide",
-              "🏆 Citizen 'Anjali K.' earned Gold Contributor",
+              "🚀 Delhi NCR resolved 1,240 complaints this month",
+              "⚡ AI prioritized 42 new issues in Lucknow",
+              "🛠️ Pothole on Noida Expressway fixed in 14 hours",
+              "🔍 94% SLA compliance across UP districts",
+              "🏆 Top Contributor: Delhi-West Division",
             ])
             .flat()
             .map((text, i) => (
@@ -820,11 +808,12 @@ export default function LandingPage() {
               <MapPin className="w-3 h-3" />8 Issue Categories
             </div>
             <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-4">
-              Every Civic Problem, One Platform
+              Regional Jurisdiction Platform
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Report any neighborhood issue with AI-assisted category detection.
-              Our system knows exactly where to route it.
+              Solving civic issues across the National Capital Region and Uttar
+              Pradesh. Our system handles jurisdiction-aware routing for faster
+              fixes.
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
@@ -841,49 +830,6 @@ export default function LandingPage() {
                 </div>
                 <div className="text-sm font-[700] text-slate-800">{label}</div>
                 <div className="text-xs text-slate-400 mt-0.5">{desc}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 text-xs font-[700] px-3 py-1.5 rounded-full mb-4 uppercase tracking-wider">
-              <CheckCircle className="w-3 h-3" />
-              How It Works
-            </div>
-            <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-4">
-              From Report to Resolution
-            </h2>
-            <p className="text-slate-500 max-w-xl mx-auto">
-              Our AI-powered pipeline ensures every complaint is handled with
-              speed, transparency, and accountability.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
-            {steps.map((s, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                className="relative text-center"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-lg font-[800] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-600/20">
-                  {s.step}
-                </div>
-                <h3 className="text-xl font-[700] text-slate-900 mb-3">
-                  {s.title}
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  {s.desc}
-                </p>
               </motion.div>
             ))}
           </div>
@@ -934,6 +880,49 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 text-xs font-[700] px-3 py-1.5 rounded-full mb-4 uppercase tracking-wider">
+              <CheckCircle className="w-3 h-3" />
+              How It Works
+            </div>
+            <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-4">
+              From Report to Resolution
+            </h2>
+            <p className="text-slate-500 max-w-xl mx-auto">
+              Our AI-powered pipeline ensures every complaint is handled with
+              speed, transparency, and accountability.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
+            {steps.map((s, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="relative text-center"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-lg font-[800] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-600/20">
+                  {s.step}
+                </div>
+                <h3 className="text-xl font-[700] text-slate-900 mb-3">
+                  {s.title}
+                </h3>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  {s.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* For Officials Section */}
       <section id="for-officials" className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -945,17 +934,17 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center gap-2 bg-violet-50 text-violet-600 text-xs font-[700] px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider">
                 <BarChart3 className="w-3 h-3" />
-                For Municipal Officials
+                For Delhi & UP Authorities
               </div>
               <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-6">
-                Command-Level Visibility.
+                Inter-State Visibility.
                 <br />
-                <span className="text-blue-600">Zero Blind Spots.</span>
+                <span className="text-blue-600">Unified Governance.</span>
               </h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Department admins get a real-time complaint queue, color-coded
-                SLA tracking, auto-routing with load balancing, and an analytics
-                dashboard with ward-level heatmaps.
+                Nodal officers in Delhi and UP get a real-time complaint queue,
+                state-specific SLA tracking, and heatmaps for the National
+                Capital Region and Uttar Pradesh.
               </p>
               <div className="space-y-4">
                 {[
@@ -1059,23 +1048,23 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
               {
-                value: 4821,
+                value: 8,
                 suffix: "",
-                label: "Resolved Fixes",
+                label: "Issue Categories",
                 icon: CheckCircle,
               },
-              { value: 45, suffix: "s", label: "Reporting Speed", icon: Clock },
+              { value: 60, suffix: "s", label: "Reporting Time", icon: Clock },
               {
-                value: 94,
-                suffix: "%",
-                label: "SLA Adherence",
+                value: 12,
+                suffix: "h",
+                label: "Min. SLA Response",
                 icon: TrendingUp,
               },
               {
-                value: 12500,
-                suffix: "+",
-                label: "Active Citizens",
-                icon: Users,
+                value: 2,
+                suffix: " States",
+                label: "Delhi & UP Coverage",
+                icon: MapPin,
               },
             ].map(({ value, suffix, label, icon: Icon }) => (
               <motion.div
@@ -1120,10 +1109,10 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="text-sm font-[700] text-slate-900">
-                      3 neighbors confirmed this
+                      Community Confirmation
                     </div>
                     <div className="text-xs text-slate-500">
-                      Pothole · MG Road
+                      Issue verified by local residents
                     </div>
                   </div>
                 </div>
@@ -1151,37 +1140,37 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-600 text-xs font-[700] px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider">
                 <Users className="w-3 h-3" />
-                Community Power
+                Regional Network
               </div>
               <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-6">
-                Neighbors Helping Neighbors Build a Better City
+                Community-Led Civic Governance
               </h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                When you report an issue, citizens within 250m get notified and
-                can confirm it — boosting priority and credibility. Earn Civic
-                Credits for every verified contribution.
+                Our prototype demonstrates how citizens can verify nearby issues
+                to boost priority and credibility. Delhi and UP residents can
+                now visualize a better jurisdiction together.
               </p>
               <div className="space-y-4 mb-8">
                 {[
                   {
                     icon: "🌱",
-                    title: "First Reporter",
-                    desc: "File your first verified complaint",
+                    title: "Issue Reporter",
+                    desc: "File a verified complaint with GPS proof",
                   },
                   {
                     icon: "🔍",
-                    title: "Verified Contributor",
-                    desc: "5 complaints verified as genuine",
+                    title: "Active Contributor",
+                    desc: "Verify issues reported in your area",
                   },
                   {
                     icon: "🦸",
-                    title: "Neighborhood Hero",
-                    desc: "25 verified reports with >90% accuracy",
+                    title: "Regional Hero",
+                    desc: "Consistent reporting with high resolution impact",
                   },
                   {
                     icon: "🏆",
-                    title: "Ward Champion",
-                    desc: "Top contributor in ward for 3 months",
+                    title: "Regional Champion",
+                    desc: "Top contributor in jurisdiction for 3 months",
                   },
                 ].map(({ icon, title, desc }) => (
                   <div
@@ -1283,8 +1272,9 @@ export default function LandingPage() {
               Ready to Make Your City Better?
             </h2>
             <p className="text-slate-300 text-lg mb-10 max-w-2xl mx-auto">
-              Join thousands of citizens using CivicPulse to report issues, earn
-              credits, and hold local government accountable.
+              Experience the prototype of CivicPulse — a platform designed to
+              report issues, earn credits, and hold authorities accountable
+              across Delhi and UP.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -1308,8 +1298,8 @@ export default function LandingPage() {
                 download required
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400" /> Works on
-                WhatsApp too
+                <CheckCircle className="w-4 h-4 text-emerald-400" />{" "}
+                GPS-verified reports only
               </span>
               <span className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-400" /> Your data
@@ -1361,11 +1351,6 @@ export default function LandingPage() {
                 title: "Support",
                 links: [
                   { label: "Help Center", id: "hero", modal: "Help Center" },
-                  {
-                    label: "Report via WhatsApp",
-                    id: "hero",
-                    modal: "Report via WhatsApp",
-                  },
                   {
                     label: "SLA Guidelines",
                     id: "features",
@@ -1439,7 +1424,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <Phone className="w-3 h-3" />
-              Available via WhatsApp, Web & Mobile
+              Available via Web Browser
             </div>
           </div>
         </div>
