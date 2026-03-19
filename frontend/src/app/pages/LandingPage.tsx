@@ -751,7 +751,7 @@ export default function LandingPage() {
               className="flex flex-wrap gap-8"
             >
               {[
-                { value: "08", label: "Categories" },
+                { value: "8", label: "Categories" },
                 { value: "SLA", label: "Enforced" },
                 { value: "Delhi/UP", label: "Precise Coverage" },
                 { value: "GPS", label: "Verification" },
