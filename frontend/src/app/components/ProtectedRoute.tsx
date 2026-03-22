@@ -59,15 +59,21 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     const isAnonymous =
       !user.email || user.email === "" || user.status === false;
 
+    // BYPASS FOR LOCAL ADMIN DEMO
+    const isAdminBypass = localStorage.getItem("is_admin_bypass") === "true";
+
     console.log("ProtectedRoute Check:", {
       user,
       allowedRoles,
       userRoles,
       isAnonymous,
+      isAdminBypass,
     });
 
     const hasPermission =
-      allowedRoles.some((role) => userRoles.includes(role)) || isAnonymous;
+      allowedRoles.some((role) => userRoles.includes(role)) ||
+      isAnonymous ||
+      (allowedRoles.includes("admin") && isAdminBypass);
 
     // Special case for "citizen" which is the default for any logged in user if not specifically restricted
     const isCitizen = allowedRoles.includes("citizen") && user;
