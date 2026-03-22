@@ -8,7 +8,6 @@ import {
   Users,
   Shield,
   MapPin,
-  Bell,
   Menu,
   LogOut,
   ChevronRight,
@@ -52,7 +51,9 @@ export default function AdminLayout() {
           </div>
           <div>
             <div className="text-sm font-[700] text-white">Municipal Admin</div>
-            <div className="text-xs text-[#d8c8e8]/80">Ward Manager · All Wards</div>
+            <div className="text-xs text-[#d8c8e8]/80">
+              Ward Manager · All Wards
+            </div>
           </div>
         </div>
       </div>
@@ -184,14 +185,10 @@ export default function AdminLayout() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-[linear-gradient(90deg,#fff1f2,#fef2f2)] px-3 py-1.5 shadow-sm">
               <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
-              <span className="text-xs font-[700] text-rose-600">3 Escalations</span>
-            </div>
-            <button className="relative rounded-xl p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white">
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-[700] text-white">
-                5
+              <span className="text-xs font-[700] text-rose-600">
+                3 Escalations
               </span>
-            </button>
+            </div>
           </div>
         </header>
 

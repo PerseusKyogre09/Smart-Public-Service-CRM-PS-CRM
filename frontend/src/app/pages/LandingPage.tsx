@@ -6,7 +6,6 @@ import {
   Zap,
   Shield,
   BarChart3,
-  Bell,
   Users,
   CheckCircle,
   Clock,
@@ -203,7 +202,7 @@ const features = [
     bg: "bg-blue-50",
   },
   {
-    icon: Bell,
+    icon: Clock,
     title: "Real-Time SLA Tracking",
     desc: "Strict resolution deadlines per category (12h to 120h). Automated escalation when deadlines approach. Citizens see live status — full transparency throughout.",
     color: "text-amber-500",
@@ -420,35 +419,6 @@ export default function LandingPage() {
         </div>
       ),
     },
-    "Help Center": {
-      title: "Help Center",
-      icon: LifeBuoy,
-      desc: "Need assistance? We're here to help.",
-      content: (
-        <div className="space-y-4 pt-2">
-          <div className="grid grid-cols-1 gap-3">
-            <div className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-              <p className="font-medium text-sm">How to report an issue?</p>
-              <p className="text-xs text-slate-500">
-                Click 'Report' and snap a photo. AI handles the rest.
-              </p>
-            </div>
-            <div className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-              <p className="font-medium text-sm">Tracking my complaint</p>
-              <p className="text-xs text-slate-500">
-                View status on your Dashboard.
-              </p>
-            </div>
-            <div className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-              <p className="font-medium text-sm">What are Civic Credits?</p>
-              <p className="text-xs text-slate-500">
-                Points earned for every verified report fixed by the city.
-              </p>
-            </div>
-          </div>
-        </div>
-      ),
-    },
     "API Access": {
       title: "API Access",
       icon: Activity,
@@ -590,9 +560,9 @@ export default function LandingPage() {
                 (item) => (
                   <button
                     key={item}
-                    onClick={() =>
-                      scrollToSection(item.toLowerCase().replace(/ /g, "-"))
-                    }
+                    onClick={() => {
+                      scrollToSection(item.toLowerCase().replace(/ /g, "-"));
+                    }}
                     className={`text-sm font-[500] transition-colors hover:text-blue-400 ${
                       scrolled ? "text-slate-600" : "text-white/80"
                     }`}
@@ -606,10 +576,10 @@ export default function LandingPage() {
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={() => navigate("/login")}
-                className={`text-sm font-[500] px-4 py-2 rounded-lg transition-colors ${
+                className={`text-sm font-[600] px-4 py-2 rounded-lg border transition-colors ${
                   scrolled
-                    ? "text-slate-700 hover:bg-slate-100"
-                    : "text-white hover:bg-white/10"
+                    ? "text-blue-600 border-blue-600 hover:bg-blue-50"
+                    : "text-white border-white/30 hover:bg-white/10"
                 }`}
               >
                 Sign In
@@ -735,11 +705,13 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigate("/admin")}
+                onClick={() => {
+                  const section = document.getElementById("features");
+                  section?.scrollIntoView({ behavior: "smooth" });
+                }}
                 className="flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white text-base font-[600] rounded-xl border border-white/20 backdrop-blur-sm transition-all"
               >
-                <Play className="w-4 h-4" />
-                View Admin Demo
+                Our Features
               </button>
             </motion.div>
 
@@ -959,7 +931,7 @@ export default function LandingPage() {
                     desc: "Complaints routed to nearest available officer by skill and workload",
                   },
                   {
-                    icon: Bell,
+                    icon: AlertTriangle,
                     title: "Escalation Automation",
                     desc: "Auto-escalate to department head and city admin on SLA breach",
                   },
@@ -982,12 +954,24 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={() => navigate("/admin")}
-                className="mt-8 flex items-center gap-2 text-sm font-[600] text-blue-600 hover:text-blue-700"
-              >
-                Explore Admin Dashboard <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap gap-4 mt-8 pt-6 border-t border-slate-100">
+                <button
+                  onClick={() =>
+                    navigate("/login", { state: { role: "manager" } })
+                  }
+                  className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-[600] transition-all"
+                >
+                  Official Login <ArrowRight className="w-4 h-4" />
+                </button>
+                <div className="flex flex-col justify-center">
+                  <span className="text-[10px] text-slate-400 uppercase font-[700] tracking-wider mb-0.5">
+                    Official Support
+                  </span>
+                  <span className="text-sm font-[500] text-slate-600">
+                    manager_name@civicpluse.com
+                  </span>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
@@ -1388,10 +1372,14 @@ export default function LandingPage() {
                     <li key={link.label}>
                       <button
                         onClick={() => {
-                          if (link.modal) {
-                            setActiveModal(link.modal);
+                          const modalLink = link as {
+                            modal?: string;
+                            id: string;
+                          };
+                          if (modalLink.modal) {
+                            setActiveModal(modalLink.modal);
                           } else {
-                            scrollToSection(link.id);
+                            scrollToSection(modalLink.id);
                           }
                         }}
                         className="text-sm text-slate-500 hover:text-blue-400 transition-colors text-left focus:outline-none"

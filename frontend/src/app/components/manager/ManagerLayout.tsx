@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Outlet, NavLink } from "react-router";
-import {
-  LayoutDashboard,
-  Users,
-  LogOut,
-  Shield,
-  Menu,
-  X,
-  Bell,
-} from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Shield, Menu, X } from "lucide-react";
 import { account } from "../../appwrite";
 import { mockManagers } from "../../data/mockData";
 
