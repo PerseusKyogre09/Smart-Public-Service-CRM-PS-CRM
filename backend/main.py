@@ -13,7 +13,8 @@ app.add_middleware(
         "http://localhost:5173", 
         "http://localhost:5174", 
         "http://localhost:3000",
-        "https://civicpulse-crm.vercel.app", // ADD YOUR PRODUCTION FRONTEND URL HERE
+        "https://smart-public-service-crm-ps-crm.onrender.com",
+        "https://civicpulse-crm.vercel.app",
         "https://civicpulse-crm.netlify.app"
     ],
     allow_credentials=True,
