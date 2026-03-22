@@ -1,7 +1,7 @@
 import json
 from fastapi import APIRouter, Query as QParam
 from appwrite.query import Query
-from appwrite_client import tablesDB, DATABASE_ID, COLLECTION_ID
+from appwrite_client import databases, DATABASE_ID, COLLECTION_ID
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 
@@ -15,8 +15,8 @@ def _score(status: str) -> int:
 @router.get("")
 async def leaderboard(tab: str = QParam(default="National")):
     try:
-        resp = tablesDB.list_rows(DATABASE_ID, COLLECTION_ID, queries=[Query.limit(500)])
-        docs = resp["rows"]
+        resp = databases.list_documents(DATABASE_ID, COLLECTION_ID, queries=[Query.limit(500)])
+        docs = resp["documents"]
     except Exception:
         return []
 
@@ -71,8 +71,8 @@ async def leaderboard(tab: str = QParam(default="National")):
 @router.get("/summary")
 async def leaderboard_summary():
     try:
-        resp = tablesDB.list_rows(DATABASE_ID, COLLECTION_ID, queries=[Query.limit(500)])
-        docs = resp["rows"]
+        resp = databases.list_documents(DATABASE_ID, COLLECTION_ID, queries=[Query.limit(500)])
+        docs = resp["documents"]
         resolved = sum(1 for d in docs if d.get("status") == "Resolved")
         active_citizens = len({d.get("reporterId") or d.get("userId") for d in docs if d.get("reporterId") or d.get("userId")})
         return {"totalResolved": resolved, "activeCitizens": active_citizens}

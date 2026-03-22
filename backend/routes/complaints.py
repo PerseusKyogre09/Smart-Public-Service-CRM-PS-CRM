@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query as FastAPIQuery
 from pydantic import BaseModel
 from appwrite.query import Query
-from appwrite_client import tablesDB, DATABASE_ID, COLLECTION_ID
+from appwrite_client import databases, DATABASE_ID, COLLECTION_ID
 from geopy.geocoders import Nominatim
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
@@ -111,12 +111,12 @@ async def list_complaints(
     radius: Optional[float] = 5.0  # default 5km radius
 ):
     try:
-        resp = tablesDB.list_rows(
+        resp = databases.list_documents(
             DATABASE_ID, COLLECTION_ID,
             queries=[Query.order_desc("createdAt"), Query.limit(100)]
         )
         
-        complaints = [_map_doc(d) for d in resp["rows"]]
+        complaints = [_map_doc(d) for d in resp["documents"]]
         
         # If lat/lng are provided, filter by distance
         if lat is not None and lng is not None:
@@ -162,7 +162,7 @@ async def create_complaint(body: ComplaintCreate):
             "photos": json.dumps(body.photos) if body.photos else "[]",
             "state": get_state_from_coords(body.coordinates["lat"], body.coordinates["lng"]) if body.coordinates else "Unknown"
         }
-        doc = tablesDB.create_row(DATABASE_ID, COLLECTION_ID, "unique()", payload)
+        doc = databases.create_document(DATABASE_ID, COLLECTION_ID, "unique()", payload)
         return {"id": doc["$id"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -172,10 +172,10 @@ async def create_complaint(body: ComplaintCreate):
 async def complaints_by_user(user_id: str, email: Optional[str] = None):
     try:
         queries_1 = [Query.equal("reporterId", user_id), Query.order_desc("createdAt"), Query.limit(100)]
-        r1 = tablesDB.list_rows(DATABASE_ID, COLLECTION_ID, queries=queries_1)
-        r2 = tablesDB.list_rows(DATABASE_ID, COLLECTION_ID,
+        r1 = databases.list_documents(DATABASE_ID, COLLECTION_ID, queries=queries_1)
+        r2 = databases.list_documents(DATABASE_ID, COLLECTION_ID,
             queries=[Query.equal("userId", user_id), Query.order_desc("createdAt"), Query.limit(100)])
-        all_docs = r1["rows"] + r2["rows"]
+        all_docs = r1["documents"] + r2["documents"]
         
         seen, unique = set(), []
         for d in all_docs:
@@ -190,7 +190,7 @@ async def complaints_by_user(user_id: str, email: Optional[str] = None):
 @router.get("/{complaint_id}")
 async def get_complaint(complaint_id: str):
     try:
-        doc = tablesDB.get_row(DATABASE_ID, COLLECTION_ID, complaint_id)
+        doc = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
         return _map_doc(doc)
     except Exception:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -199,7 +199,7 @@ async def get_complaint(complaint_id: str):
 @router.patch("/{complaint_id}/status")
 async def update_status(complaint_id: str, body: StatusUpdate):
     try:
-        doc = tablesDB.get_row(DATABASE_ID, COLLECTION_ID, complaint_id)
+        doc = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
         timeline = doc.get("timeline", "[]")
         if isinstance(timeline, str):
             try:
@@ -212,12 +212,12 @@ async def update_status(complaint_id: str, body: StatusUpdate):
             "note": body.note,
             "actor": body.actor,
         })
-        tablesDB.update_row(DATABASE_ID, COLLECTION_ID, complaint_id, {
+        databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, {
             "status": body.status,
             "timeline": json.dumps(timeline),
             "updatedAt": datetime.now(UTC).isoformat(),
         })
-        updated = tablesDB.get_row(DATABASE_ID, COLLECTION_ID, complaint_id)
+        updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
         return _map_doc(updated)
     except HTTPException:
         raise
