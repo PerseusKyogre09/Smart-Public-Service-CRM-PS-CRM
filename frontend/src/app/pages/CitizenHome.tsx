@@ -218,14 +218,14 @@ export default function CitizenHome() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-sm text-slate-600">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
+              {/* <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
                 <LocateFixed className="h-4 w-4 text-sky-600" />
                 {coords ? "Nearby updates enabled" : "Location not shared yet"}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
+              </span> */}
+              {/* <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
                 <ShieldCheck className="h-4 w-4 text-sky-600" />
                 {userState || "Local area feed"}
-              </span>
+              </span> */}
             </div>
           </div>
 
@@ -362,40 +362,6 @@ export default function CitizenHome() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Your engagement
-            </h2>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 p-4">
-                <div className="text-sm font-medium text-slate-600">
-                  Your completion rate
-                </div>
-                <div className="mt-2 flex items-end gap-2">
-                  <div className="text-2xl font-semibold text-slate-900">
-                    {userComplaints.length
-                      ? Math.round(
-                          (resolvedCount / userComplaints.length) * 100,
-                        )
-                      : 0}
-                    %
-                  </div>
-                  <div className="mb-1 text-sm text-slate-500">
-                    resolved or closed
-                  </div>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-sky-700"
-                    style={{
-                      width: `${userComplaints.length ? Math.round((resolvedCount / userComplaints.length) * 100) : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
               Quick actions

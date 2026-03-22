@@ -8,12 +8,7 @@ import MyComplaints from "./pages/MyComplaints";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
-import AdminLayout from "./components/admin/AdminLayout";
-import AdminOverview from "./pages/admin/AdminOverview";
-import AdminQueue from "./pages/admin/AdminQueue";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminSLA from "./pages/admin/AdminSLA";
-import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPanel from "./modules/admin-panel/index.jsx";
 import ManagerLayout from "./components/manager/ManagerLayout";
 import ManagerOverview from "./pages/manager/ManagerOverview";
 import ManagerWorkers from "./pages/manager/ManagerWorkers";
@@ -60,14 +55,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/admin",
-        Component: AdminLayout,
-        children: [
-          { index: true, Component: AdminOverview },
-          { path: "queue", Component: AdminQueue },
-          { path: "analytics", Component: AdminAnalytics },
-          { path: "sla", Component: AdminSLA },
-          { path: "users", Component: AdminUsers },
-        ],
+        Component: AdminPanel,
       },
     ],
   },

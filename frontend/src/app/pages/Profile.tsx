@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Bell, ChevronRight, LogOut, Mail, MapPin, Shield } from "lucide-react";
+import { ChevronRight, LogOut, Mail, MapPin, Shield } from "lucide-react";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
 
@@ -287,10 +287,7 @@ export default function Profile() {
               Account actions
             </h2>
             <div className="mt-4 space-y-2">
-              {[
-                { icon: Bell, label: "Notification preferences" },
-                { icon: Shield, label: "Privacy settings" },
-              ].map((item) => (
+              {[{ icon: Shield, label: "Privacy settings" }].map((item) => (
                 <button
                   key={item.label}
                   className="flex w-full items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-left hover:bg-sky-50/50"

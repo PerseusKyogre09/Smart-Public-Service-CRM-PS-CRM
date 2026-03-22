@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
-import {
-  Bell,
-  ChevronDown,
-  LogOut,
-  Menu,
-  Plus,
-  Shield,
-  X,
-} from "lucide-react";
+import { ChevronDown, LogOut, Menu, Plus, Shield, X } from "lucide-react";
 import { account } from "../../appwrite";
 import { authService } from "../../appwriteService";
 
@@ -124,15 +116,6 @@ export default function DashboardLayout() {
             >
               <Plus className="h-4 w-4" />
               Report
-            </button>
-
-            <button className="relative rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
-              <Bell className="h-5 w-5" />
-              {notifications > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-sky-700 text-[10px] font-semibold text-white">
-                  {notifications}
-                </span>
-              )}
             </button>
 
             <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 sm:flex">
