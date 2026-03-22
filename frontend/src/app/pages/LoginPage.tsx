@@ -68,6 +68,34 @@ export default function LoginPage() {
         return;
       }
 
+      // Automatically handle official admin login for demo/dev purposes
+      if (
+        email.toLowerCase() === "admin@civicpulse.com" &&
+        password === "admin123456"
+      ) {
+        try {
+          // Try to login if account exists
+          await authService.loginWithEmail(email, password);
+        } catch (authErr: any) {
+          // If account doesn't exist (401/404), create it and then login
+          console.log("Admin account missing, creating for demo...");
+          try {
+            await authService.signupWithEmail(
+              email,
+              password,
+              "System Administrator",
+            );
+          } catch (signupErr: any) {
+            // If signup fails because it exists but pass differs, or other error
+            console.error("Auto-signup failed:", signupErr);
+            // Fallback to anonymous login for demo if restricted
+            await authService.loginAnonymous();
+          }
+        }
+        navigate("/admin", { replace: true });
+        return;
+      }
+
       // Check if this is a manager demo account
       const manager = mockManagers.find(
         (m) => m.email.toLowerCase() === email.toLowerCase(),
