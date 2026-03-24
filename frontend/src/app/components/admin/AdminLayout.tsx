@@ -18,6 +18,7 @@ const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Overview", end: true },
   { to: "/admin/queue", icon: ListFilter, label: "Complaint Queue" },
   { to: "/admin/analytics", icon: BarChart3, label: "Analytics & Heatmap" },
+  { to: "/admin/managers", icon: Users, label: "Managers" },
   { to: "/admin/sla", icon: Settings, label: "SLA Configuration" },
   { to: "/admin/users", icon: Users, label: "User Management" },
 ];

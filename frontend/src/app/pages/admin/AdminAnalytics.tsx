@@ -147,9 +147,8 @@ export default function AdminAnalytics() {
               <button
                 key={d}
                 onClick={() => setDateRange(d)}
-                className={`px-4 py-2 text-sm font-[500] transition-colors ${
-                  dateRange === d ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
-                }`}
+                className={`px-4 py-2 text-sm font-[500] transition-colors ${dateRange === d ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 {d}
               </button>

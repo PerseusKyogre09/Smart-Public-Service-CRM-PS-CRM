@@ -319,18 +319,29 @@ export default function AdminOverview() {
         <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-slate-100">
             <h3 className="text-base font-[700] text-slate-900">Manager Workload</h3>
-            <span className="text-xs bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full font-[600]">{managerWorkload.length} active managers</span>
+            <button
+              onClick={() => navigate("/admin/managers")}
+              className="text-xs text-violet-600 hover:text-violet-700 font-[600] flex items-center gap-1"
+            >
+              View All <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
           <div className="divide-y divide-slate-50">
             {managerWorkload.length === 0 ? (
               <div className="py-10 text-center text-sm text-slate-400">No assigned complaints yet</div>
             ) : managerWorkload.map((mgr) => (
-              <div key={mgr.name} className="flex items-center gap-4 px-5 py-3.5">
+              <div
+                key={mgr.name}
+                onClick={() => navigate("/admin/managers")}
+                className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-slate-50 transition-colors group"
+              >
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white text-xs font-[700]">
                   {mgr.name.split(" ").map((n: string) => n[0]).join("")}
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-[600] text-slate-800">{mgr.name}</div>
+                  <div className="text-sm font-[600] text-slate-800 group-hover:text-sky-600 transition-colors">
+                    {mgr.name}
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-[700] text-amber-600">{mgr.active}</div>
@@ -340,6 +351,7 @@ export default function AdminOverview() {
                   <div className="text-sm font-[700] text-emerald-600">{mgr.resolved}</div>
                   <div className="text-xs text-slate-400">resolved</div>
                 </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500" />
               </div>
             ))}
           </div>
