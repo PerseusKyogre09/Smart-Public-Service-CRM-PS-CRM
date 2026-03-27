@@ -58,21 +58,35 @@ export default function LoginPage() {
       setIsLoading(true);
 
       // --- Official Credentials Enforcement ---
-      const isOfficialEmail =
-        email.toLowerCase().endsWith("@civicpulse.com") ||
-        email.toLowerCase() === "admin@civicpulse.com";
+      const isOfficialAdmin = email.toLowerCase() === "admin@civicpulse.com";
+      const manager = mockManagers.find(
+        (m) => m.email.toLowerCase() === email.toLowerCase(),
+      );
 
-      if (isOfficialEmail && password !== "admin123456") {
+      if (isOfficialAdmin && password !== "admin123456") {
         setError("Invalid credentials for official account.");
         setIsLoading(false);
         return;
       }
 
+      if (manager) {
+        const expectedPassword = `${manager.name.split(" ")[0].toLowerCase()}@123`;
+        if (password !== expectedPassword) {
+          setError(
+            `Invalid credentials. For managers, use: first_name@123 (e.g., ${expectedPassword})`,
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        // Mock manager login (using anonymous auth for backend connection)
+        await authService.loginAnonymous();
+        navigate(`/manager/${manager.id}`, { replace: true });
+        return;
+      }
+
       // Automatically handle official admin login for demo/dev purposes
-      if (
-        email.toLowerCase() === "admin@civicpulse.com" &&
-        password === "admin123456"
-      ) {
+      if (isOfficialAdmin) {
         try {
           // Force set a local storage flag to bypass role check if Appwrite labels fail
           localStorage.setItem("is_admin_bypass", "true");
@@ -91,22 +105,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Check if this is a manager demo account
-      const manager = mockManagers.find(
-        (m) => m.email.toLowerCase() === email.toLowerCase(),
-      );
-
-      if (manager) {
-        // Mock manager login (using anonymous auth for backend connection)
-        // For demo purposes, we accept any password for these specific emails
-        await authService.loginAnonymous();
-        navigate(`/manager/${manager.id}`, { replace: true });
-        return;
-      }
-
       await authService.loginWithEmail(email, password);
       // Redirect based on email
-      if (email.toLowerCase() === "admin@civicpulse.com") {
+      if (isOfficialAdmin) {
         navigate("/admin", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
