@@ -14,9 +14,11 @@ import {
   Download,
   ChevronDown,
   UserCheck,
+  Loader2,
 } from "lucide-react";
 import { appwriteService } from "../../appwriteService";
 import { api } from "../../api";
+import { exportDataToPDF } from "../../utils/pdfExport";
 import { Complaint } from "../../data/mockData";
 import { toast } from "sonner";
 
@@ -67,6 +69,7 @@ export default function AdminQueue() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [assignLoading, setAssignLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [search, setSearch] = useState("");
   const [filterSLA, setFilterSLA] = useState("All");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -163,8 +166,39 @@ export default function AdminQueue() {
           <button className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white/85 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm">
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
-          <button className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white/85 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm">
-            <Download className="w-4 h-4" /> Export CSV
+          <button
+            onClick={async () => {
+              try {
+                setIsExporting(true);
+                // Export as PDF
+                const columns = [
+                  { label: "ID", key: "id" },
+                  { label: "Category", key: "category" },
+                  { label: "Area", key: "area" },
+                  { label: "Status", key: "status" },
+                  { label: "Priority", key: "priorityScore" },
+                  { label: "SLA Hours Left", key: "slaRemainingHours" },
+                  { label: "Created At", key: "createdAt" },
+                ];
+                const displayData = filtered.map((c) => ({
+                  ...c,
+                  createdAt: new Date(c.createdAt).toLocaleDateString(),
+                }));
+                
+                await exportDataToPDF(displayData, columns, "complaint-queue", "Complaint Queue Report");
+                toast.success("Export completed successfully");
+              } catch (error) {
+                console.error("Export failed:", error);
+                toast.error("Failed to export data");
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+            disabled={isExporting || complaints.length === 0}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white/85 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm disabled:opacity-50"
+          >
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {isExporting ? "Exporting..." : "Export PDF"}
           </button>
           {selectedIds.length > 0 && (
             <button

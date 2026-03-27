@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { appwriteService } from "../../appwriteService";
+import { exportToPDF } from "../../utils/pdfExport";
+import { toast } from "sonner";
 import {
   Download,
   AlertTriangle,
   TrendingUp,
   BarChart3,
   MapPin,
+  Loader2,
 } from "lucide-react";
 import {
   BarChart,
@@ -360,6 +363,7 @@ const defaultKpiData = {
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState("7d");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [isExporting, setIsExporting] = useState(false);
   const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -546,7 +550,7 @@ export default function AdminAnalytics() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto" id="analytics-dashboard">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -573,8 +577,24 @@ export default function AdminAnalytics() {
               </button>
             ))}
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white/88 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm">
-            <Download className="w-4 h-4" /> Export PDF
+          <button
+            onClick={async () => {
+              try {
+                setIsExporting(true);
+                await exportToPDF("analytics-dashboard", "admin-analytics", "Complaint Analytics Report");
+                toast.success("PDF exported successfully");
+              } catch (error) {
+                console.error("Export failed:", error);
+                toast.error("Failed to export PDF");
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white/88 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm disabled:opacity-50"
+          >
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {isExporting ? "Exporting..." : "Export PDF"}
           </button>
         </div>
       </div>
