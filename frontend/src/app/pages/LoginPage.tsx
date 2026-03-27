@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { motion } from "motion/react";
-import { Mail, Shield, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Shield, Loader2, Eye, EyeOff, ChevronLeft, Users, ArrowRight } from "lucide-react";
 import { authService } from "../appwriteService";
 import { getNetworkErrorMessage } from "../utils/connectionStatus";
 import { mockManagers, workerCredentials } from "../data/mockData";
@@ -109,21 +109,18 @@ export default function LoginPage() {
       }
 
       // --- Official Credentials Enforcement (after checking demo accounts) ---
-      const isOfficialEmail =
+      const isOfficialAdmin =
         email.toLowerCase().endsWith("@civicpulse.com") ||
         email.toLowerCase() === "admin@civicpulse.com";
 
-      if (isOfficialEmail && password !== "admin123456") {
+      if (isOfficialAdmin && password !== "admin123456") {
         setError("Invalid credentials for official account.");
         setIsLoading(false);
         return;
       }
 
       // Automatically handle official admin login for demo/dev purposes
-      if (
-        email.toLowerCase() === "admin@civicpulse.com" &&
-        password === "admin123456"
-      ) {
+      if (isOfficialAdmin) {
         try {
           // Force set a local storage flag to bypass role check if Appwrite labels fail
           localStorage.setItem("is_admin_bypass", "true");
@@ -145,11 +142,7 @@ export default function LoginPage() {
       // Check if this is a regular user in Appwrite
       await authService.loginWithEmail(email, password);
       // Redirect based on email
-      if (email.toLowerCase() === "admin@civicpulse.com") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Login error:", err);
       // Handle specific Appwrite error codes if needed
