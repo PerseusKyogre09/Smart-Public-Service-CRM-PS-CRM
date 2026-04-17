@@ -9,21 +9,44 @@
 
 ---
 
-## ✨ Key Features
+## 🏗️ Multi-Portal Ecosystem
 
-### 👨‍💼 For Citizens
+### 👨‍💼 Citizen Portal
+*Empowering community action through engagement.*
+- **📍 Smart Reporting**: Report issues (potholes, garbage, etc.) with GPS auto-detection and AI-assisted category suggestions.
+- **🗺️ Interactive Map**: View nearby issues, status updates, and community verifications in real-time.
+- **🏆 Civic Credits**: Earn reputation points for verified reports and successful resolutions.
+- **📈 Personal Dashboard**: Track your contribution history and follow the lifecycle of your complaints.
 
-- **📍 Smart Reporting**: Report issues like potholes, broken streetlights, or waste with GPS auto-detection.
-- **🖼️ AI Smart-Snap**: AI-assisted category suggestion based on uploaded photos.
-- **🗺️ The Fix Map**: Interactive map showing nearby issues, their status, and community verifications.
-- **⏱️ SLA Tracking**: Real-time countdowns for issue resolution with automatic escalation triggers.
-- **🏆 Leaderboard**: Earn credits and climb the rankings by reporting and verifying neighborhood issues.
+### 🛡️ Admin Portal
+*High-level oversight and system-wide management.*
+- **📊 Global Analytics**: Monitor MTTR (Mean Time to Resolution) and overall SLA compliance across all wards.
+- **👥 User Management**: Manage user accounts, monitor reputation trends, and moderate reported content.
+- **📥 Unified Queue**: Global inbox to filter, search, and oversee every complaint in the system.
+- **⚙️ SLA Configuration**: Define and adjust resolution timelines based on issue categories.
 
-### 🛡️ For Administrators & Managers
+### 📂 Manager Portal
+*Regional operations and workflow optimization.*
+- **📍 Jurisdiction Overview**: Real-time monitoring of active complaints within specific states or regions.
+- **👷 Worker Assignment**: Intelligent task routing to field officers based on location and current workload.
+- **📈 Team Performance**: Track worker efficiency and regional resolution metrics.
+- **🔄 Automated Routing**: Backend-driven logic for seamless transition from "Verified" to "Assigned".
 
-- **📊 Admin Portal**: Comprehensive command center for ward-level statistics and performance metrics.
-- **📋 Management Dashboard**: Streamlined interface for assigning tasks to field officers and monitoring progress.
-- **📈 Data Visualization**: Real-time charts and heatmaps for infrastructure health monitoring.
+### 👷 Worker Portal
+*Field execution and resolution verification.*
+- **📋 Task Dashboard**: Mobile-optimized list of assigned tasks sorted by SLA urgency.
+- **✅ Status Updates**: Direct updates from "En Route" to "Resolved" with field-level clarity.
+- **📸 GPS-Locked Proof**: Resolution photos can only be uploaded within 150m of the GPS pin for total transparency.
+- **🛠️ Service History**: Log of completed tasks and impact on community infrastructure.
+
+---
+
+## ✨ Key Technical Features
+
+- **🖼️ AI Smart-Snap**: Automated image-based category classification for faster reporting.
+- **⏱️ SLA Tracking**: Real-time countdowns with automated escalation triggers for overdue tasks.
+- **🔗 Graded Trust Auth**: Phased authentication levels and reward models for verified users.
+- **📊 Real-time Synchronization**: Powered by Appwrite for instant updates across all portals.
 
 ---
 
@@ -37,11 +60,22 @@
 
 ## 📁 Project Structure
 
-| Path        | Purpose                                      |
+| Path | Purpose |
 | ----------- | -------------------------------------------- |
-| `backend/`  | 🐍 FastAPI Application (Business Logic & AI) |
-| `frontend/` | ⚛️ React Application (Vite + Tailwind)       |
-| `docs/`     | 📝 Documentation & PRDs                      |
+| `backend/` | 🐍 FastAPI Application (Business Logic & AI Endpoints) |
+| `frontend/` | ⚛️ React Multi-Portal Application (Vite + Tailwind) |
+| `docs/` | 📝 Comprehensive [PRD](docs/PRD.md) and [Feature Guides](docs/Final_features.md) |
+
+---
+
+## 📜 Portals Quick Reference
+
+| Portal | Primary User | Key Goal |
+| --- | --- | --- |
+| **Citizen** | General Public | Report & Track Issues |
+| **Admin** | System Admins | Global Monitoring & Settings |
+| **Manager** | Regional Managers | Task Routing & Supervision |
+| **Worker** | Field Officers | Task Resolution & Verification |
 
 ---
 
