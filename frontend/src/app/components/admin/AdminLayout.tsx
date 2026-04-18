@@ -182,6 +182,8 @@ export default function AdminLayout() {
         <main className="flex-1 overflow-auto bg-white/8 p-4 backdrop-blur-[16px] lg:p-8">
           <Outlet />
         </main>
+
+        <AdminAIAssistant />
       </div>
 
       <AdminAIAssistant />

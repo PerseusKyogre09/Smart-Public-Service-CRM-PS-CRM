@@ -1,16 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "motion/react";
 import { appwriteService } from "../../appwriteService";
-import { exportToPDF } from "../../utils/pdfExport";
-import { toast } from "sonner";
 import {
-  Download,
-  AlertTriangle,
-  TrendingUp,
-  BarChart3,
-  MapPin,
-  Loader2,
-} from "lucide-react";
+  CircleMarker,
+  MapContainer,
+  Rectangle,
+  TileLayer,
+  Tooltip as MapTooltip,
+  useMapEvents,
+  ZoomControl,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   BarChart,
   Bar,
@@ -21,29 +20,370 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
   Line,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
   Cell,
 } from "recharts";
-import {
-  mockAreaStats,
-  complaintTrendData,
-  categoryBreakdown,
-} from "../../data/mockData";
-import {
-  DELHI_ZONE_CONFIG,
-  inferDelhiZone,
-  isDelhiComplaint,
-  type DelhiZoneId,
-  type ZoneStats,
-} from "../../utils/adminInsights";
+import { mockAreaStats } from "../../data/mockData";
 
-// Heatmap SVG Component
+type DelhiZoneId =
+  | "south"
+  | "central_new"
+  | "east_shahdara"
+  | "west"
+  | "north_nw";
+
+type ZoneStats = {
+  id: DelhiZoneId;
+  name: string;
+  localities: string[];
+  target: string;
+  total: number;
+  pending: number;
+  resolved: number;
+  escalated: number;
+};
+
+type DelhiSubZone = {
+  id: string;
+  name: string;
+  parent: DelhiZoneId;
+  bounds: [[number, number], [number, number]];
+};
+
+const DELHI_BOUNDS = {
+  minLat: 28.39,
+  maxLat: 28.89,
+  minLng: 76.84,
+  maxLng: 77.35,
+};
+
+const DELHI_ZONE_CONFIG: Array<{
+  id: DelhiZoneId;
+  name: string;
+  localities: string[];
+  target: string;
+  keywords: string[];
+  center: [number, number];
+  bounds: [[number, number], [number, number]];
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}> = [
+  {
+    id: "south",
+    name: "South Delhi",
+    localities: ["Saket", "GK", "Hauz Khas", "Vasant Vihar"],
+    target: "High-income households, expats, luxury consumers",
+    keywords: [
+      "south delhi",
+      "saket",
+      "gk",
+      "greater kailash",
+      "hauz khas",
+      "vasant vihar",
+      "malviya nagar",
+      "defence colony",
+    ],
+    center: [28.535, 77.19],
+    bounds: [
+      [28.465, 77.09],
+      [28.605, 77.31],
+    ],
+    x: 10,
+    y: 58,
+    w: 38,
+    h: 30,
+  },
+  {
+    id: "central_new",
+    name: "Central & New Delhi",
+    localities: ["Connaught Place", "Karol Bagh", "Daryaganj", "Civil Lines"],
+    target: "Corporates, high-street shoppers, tourists, government employees",
+    keywords: [
+      "central delhi",
+      "new delhi",
+      "connaught place",
+      "cp",
+      "karol bagh",
+      "daryaganj",
+      "civil lines",
+      "paharganj",
+    ],
+    center: [28.64, 77.205],
+    bounds: [
+      [28.6, 77.14],
+      [28.69, 77.25],
+    ],
+    x: 30,
+    y: 38,
+    w: 32,
+    h: 20,
+  },
+  {
+    id: "east_shahdara",
+    name: "East Delhi & Shahdara",
+    localities: ["Laxmi Nagar", "Preet Vihar", "Mayur Vihar", "Gandhi Nagar"],
+    target: "Young professionals, students, mid-income families",
+    keywords: [
+      "east delhi",
+      "shahdara",
+      "laxmi nagar",
+      "preet vihar",
+      "mayur vihar",
+      "gandhi nagar",
+      "anand vihar",
+      "vivek vihar",
+    ],
+    center: [28.645, 77.285],
+    bounds: [
+      [28.585, 77.225],
+      [28.73, 77.35],
+    ],
+    x: 62,
+    y: 42,
+    w: 28,
+    h: 34,
+  },
+  {
+    id: "west",
+    name: "West Delhi",
+    localities: ["Rajouri Garden", "Punjabi Bagh", "Janakpuri", "Patel Nagar"],
+    target: "Retail consumers, residential communities, family businesses",
+    keywords: [
+      "west delhi",
+      "rajouri garden",
+      "punjabi bagh",
+      "janakpuri",
+      "patel nagar",
+      "tilak nagar",
+      "vikaspuri",
+      "dwarka",
+    ],
+    center: [28.655, 77.07],
+    bounds: [
+      [28.58, 76.96],
+      [28.72, 77.14],
+    ],
+    x: 8,
+    y: 28,
+    w: 28,
+    h: 30,
+  },
+  {
+    id: "north_nw",
+    name: "North & North-West Delhi",
+    localities: ["Rohini", "Model Town", "Delhi University Campus", "Narela"],
+    target: "Students, tech-enabled youth, industrial professionals",
+    keywords: [
+      "north delhi",
+      "north west delhi",
+      "north-west delhi",
+      "rohini",
+      "model town",
+      "narela",
+      "delhi university",
+      "du campus",
+      "burari",
+      "pitampura",
+    ],
+    center: [28.77, 77.14],
+    bounds: [
+      [28.69, 77.02],
+      [28.87, 77.26],
+    ],
+    x: 26,
+    y: 8,
+    w: 42,
+    h: 28,
+  },
+];
+
+const DEFAULT_ZONE = DELHI_ZONE_CONFIG.find((z) => z.id === "central_new")!;
+const DELHI_CENTER: [number, number] = [28.6139, 77.209];
+const DELHI_ZONES_FRAME_BOUNDS: [[number, number], [number, number]] = [
+  [28.46, 76.96],
+  [28.87, 77.35],
+];
+
+const DELHI_SUBZONES: DelhiSubZone[] = [
+  {
+    id: "south-saket-gk",
+    name: "Saket / GK",
+    parent: "south",
+    bounds: [
+      [28.49, 77.17],
+      [28.57, 77.26],
+    ],
+  },
+  {
+    id: "south-hauz-vasant",
+    name: "Hauz Khas / Vasant Vihar",
+    parent: "south",
+    bounds: [
+      [28.53, 77.09],
+      [28.6, 77.18],
+    ],
+  },
+  {
+    id: "central-cp-karol",
+    name: "Connaught Place / Karol Bagh",
+    parent: "central_new",
+    bounds: [
+      [28.62, 77.17],
+      [28.67, 77.23],
+    ],
+  },
+  {
+    id: "central-civil-darya",
+    name: "Civil Lines / Daryaganj",
+    parent: "central_new",
+    bounds: [
+      [28.6, 77.14],
+      [28.69, 77.19],
+    ],
+  },
+  {
+    id: "east-laxmi-preet",
+    name: "Laxmi Nagar / Preet Vihar",
+    parent: "east_shahdara",
+    bounds: [
+      [28.61, 77.25],
+      [28.69, 77.31],
+    ],
+  },
+  {
+    id: "east-mayur-shahdara",
+    name: "Mayur Vihar / Shahdara",
+    parent: "east_shahdara",
+    bounds: [
+      [28.62, 77.29],
+      [28.73, 77.35],
+    ],
+  },
+  {
+    id: "west-rajouri-punjabi",
+    name: "Rajouri / Punjabi Bagh",
+    parent: "west",
+    bounds: [
+      [28.63, 77.03],
+      [28.7, 77.12],
+    ],
+  },
+  {
+    id: "west-janak-vikaspuri",
+    name: "Janakpuri / Vikaspuri",
+    parent: "west",
+    bounds: [
+      [28.58, 76.98],
+      [28.66, 77.07],
+    ],
+  },
+  {
+    id: "north-rohini-model",
+    name: "Rohini / Model Town",
+    parent: "north_nw",
+    bounds: [
+      [28.72, 77.08],
+      [28.81, 77.18],
+    ],
+  },
+  {
+    id: "north-narela-burari",
+    name: "Narela / Burari",
+    parent: "north_nw",
+    bounds: [
+      [28.79, 77.12],
+      [28.87, 77.26],
+    ],
+  },
+];
+
+function ZoomLevelWatcher({
+  onZoomChange,
+}: {
+  onZoomChange: (zoom: number) => void;
+}) {
+  useMapEvents({
+    zoomend(event) {
+      onZoomChange(event.target.getZoom());
+    },
+  });
+
+  return null;
+}
+
+function isDelhiComplaint(complaint: any): boolean {
+  const searchable = [
+    complaint?.state,
+    complaint?.address,
+    complaint?.area,
+    complaint?.ward,
+    complaint?.description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    searchable.includes("delhi") ||
+    searchable.includes("new delhi") ||
+    searchable.includes("nct")
+  ) {
+    return true;
+  }
+
+  const coords = complaint?.coordinates;
+  if (coords && typeof coords === "object") {
+    const lat = Number(coords.lat ?? coords.latitude);
+    const lng = Number(coords.lng ?? coords.longitude);
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      return (
+        lat >= DELHI_BOUNDS.minLat &&
+        lat <= DELHI_BOUNDS.maxLat &&
+        lng >= DELHI_BOUNDS.minLng &&
+        lng <= DELHI_BOUNDS.maxLng
+      );
+    }
+  }
+
+  return false;
+}
+
+function inferDelhiZone(complaint: any): DelhiZoneId {
+  const searchable = [
+    complaint?.area,
+    complaint?.ward,
+    complaint?.address,
+    complaint?.description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  for (const zone of DELHI_ZONE_CONFIG) {
+    if (zone.keywords.some((keyword) => searchable.includes(keyword))) {
+      return zone.id;
+    }
+  }
+
+  const coords = complaint?.coordinates;
+  if (coords && typeof coords === "object") {
+    const lat = Number(coords.lat ?? coords.latitude);
+    const lng = Number(coords.lng ?? coords.longitude);
+
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      if (lat >= 28.72) return "north_nw";
+      if (lat <= 28.56) return "south";
+      if (lng >= 77.23) return "east_shahdara";
+      if (lng <= 77.08) return "west";
+    }
+  }
+
+  return DEFAULT_ZONE.id;
+}
+
+// Live interactive map heatmap component
 function CityHeatmap({
   activeCategory,
   zoneStats,
@@ -51,288 +391,359 @@ function CityHeatmap({
   activeCategory: string;
   zoneStats: ZoneStats[];
 }) {
-  const [hoveredRegion, setHoveredRegion] = useState<DelhiZoneId | null>(null);
-  const zoneMap = useMemo(() => {
-    const map = {} as Record<DelhiZoneId, ZoneStats>;
+  const [mapZoom, setMapZoom] = useState(10);
+
+  const totalOpen = useMemo(
+    () => zoneStats.reduce((sum, zone) => sum + zone.pending, 0),
+    [zoneStats],
+  );
+  const totalSolved = useMemo(
+    () => zoneStats.reduce((sum, zone) => sum + zone.resolved, 0),
+    [zoneStats],
+  );
+  const totalReceived = useMemo(
+    () => zoneStats.reduce((sum, zone) => sum + zone.total, 0),
+    [zoneStats],
+  );
+
+  const zoneById = useMemo(() => {
+    const map: Record<DelhiZoneId, ZoneStats> = {
+      south: {
+        id: "south",
+        name: "South Delhi",
+        localities: [],
+        target: "",
+        total: 0,
+        pending: 0,
+        resolved: 0,
+        escalated: 0,
+      },
+      central_new: {
+        id: "central_new",
+        name: "Central & New Delhi",
+        localities: [],
+        target: "",
+        total: 0,
+        pending: 0,
+        resolved: 0,
+        escalated: 0,
+      },
+      east_shahdara: {
+        id: "east_shahdara",
+        name: "East Delhi & Shahdara",
+        localities: [],
+        target: "",
+        total: 0,
+        pending: 0,
+        resolved: 0,
+        escalated: 0,
+      },
+      west: {
+        id: "west",
+        name: "West Delhi",
+        localities: [],
+        target: "",
+        total: 0,
+        pending: 0,
+        resolved: 0,
+        escalated: 0,
+      },
+      north_nw: {
+        id: "north_nw",
+        name: "North & North-West Delhi",
+        localities: [],
+        target: "",
+        total: 0,
+        pending: 0,
+        resolved: 0,
+        escalated: 0,
+      },
+    };
+
     zoneStats.forEach((zone) => {
       map[zone.id] = zone;
     });
     return map;
   }, [zoneStats]);
 
-  const maxPending = Math.max(...zoneStats.map((z) => z.pending), 1);
-  const hoveredMetrics = hoveredRegion
-    ? zoneMap[hoveredRegion]
-    : zoneStats.reduce((top, zone) => (zone.pending > top.pending ? zone : top));
-  const hoveredRegionConfig = hoveredRegion
-    ? DELHI_ZONE_CONFIG.find((zone) => zone.id === hoveredRegion) || null
-    : null;
+  const [selectedZoneId, setSelectedZoneId] = useState<DelhiZoneId>(
+    DEFAULT_ZONE.id,
+  );
 
-  const getColor = (intensity: number) => {
-    if (intensity >= 0.8) return "rgba(220, 38, 38, 0.85)"; // Red-600
-    if (intensity >= 0.6) return "rgba(217, 119, 6, 0.75)"; // Amber-600
-    if (intensity >= 0.4) return "rgba(37, 99, 235, 0.65)"; // Blue-600
-    return "rgba(5, 150, 105, 0.55)"; // Emerald-600
+  const maxZoneLoad = useMemo(
+    () => Math.max(...zoneStats.map((z) => z.pending + z.escalated), 1),
+    [zoneStats],
+  );
+
+  const getZonePalette = (score: number) => {
+    if (score >= 0.85) return { stroke: "#ef4444", fill: "#fb7185" };
+    if (score >= 0.65) return { stroke: "#f97316", fill: "#fb923c" };
+    if (score >= 0.45) return { stroke: "#eab308", fill: "#facc15" };
+    return { stroke: "#14b8a6", fill: "#2dd4bf" };
   };
 
-  const getShortLabel = (name: string) => {
-    if (name === "Central & New Delhi") return "Central";
-    if (name === "East Delhi & Shahdara") return "East";
-    if (name === "North & North-West Delhi") return "North-West";
-    if (name === "South Delhi") return "South";
-    if (name === "West Delhi") return "West";
-    return name;
-  };
+  const subZoneStats = useMemo(() => {
+    const stats: Record<string, number> = {};
+
+    DELHI_SUBZONES.forEach((subZone) => {
+      const parentZoneStats = zoneById[subZone.parent];
+      const baselineLoad = parentZoneStats.pending + parentZoneStats.escalated;
+      const weight = (Math.abs(subZone.name.length * 13) % 35) / 100 + 0.32;
+      stats[subZone.id] = Math.max(1, Math.round(baselineLoad * weight));
+    });
+
+    return stats;
+  }, [zoneById]);
+
+  const maxSubZoneLoad = useMemo(
+    () => Math.max(...Object.values(subZoneStats), 1),
+    [subZoneStats],
+  );
+
+  const topZoneId = useMemo(() => {
+    return [...zoneStats].sort(
+      (a, b) => b.pending + b.escalated - (a.pending + a.escalated),
+    )[0]?.id;
+  }, [zoneStats]);
+
+  useEffect(() => {
+    if (!topZoneId) return;
+    setSelectedZoneId((prev) => (zoneById[prev] ? prev : topZoneId));
+  }, [topZoneId, zoneById]);
+
+  const showDeepRegions = mapZoom >= 12;
+
+  const selectedZone = zoneById[selectedZoneId] || zoneById[DEFAULT_ZONE.id];
+
+  const deepRegionText = showDeepRegions
+    ? `Zoom ${mapZoom}: showing ${selectedZone.name} deep regions`
+    : `Zoom ${mapZoom}: zoom in to 12+ for deep regions`;
 
   return (
-    <div
-      className="relative bg-[#020617] rounded-[2rem] overflow-hidden border border-slate-800 shadow-2xl"
-      style={{ height: 500 }}
-    >
-      {/* Dynamic Grid Background */}
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: "radial-gradient(#475569 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-
-      <div className="absolute left-5 top-5 right-5 z-10 flex items-start justify-between gap-4">
-        <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 px-4 py-3 backdrop-blur-md">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-            Hover Insight
-          </div>
-          <div className="mt-2 text-sm font-[800] text-white">
-            {hoveredRegionConfig ? hoveredRegionConfig.name : "Move over a Delhi zone"}
-          </div>
-          <div className="mt-1 text-[11px] leading-relaxed text-slate-300">
-            {hoveredRegionConfig
-              ? "Live complaint metrics for the selected zone."
-              : "Detailed zone metrics will appear here on hover."}
-          </div>
+    <div className="relative grid gap-3 lg:grid-cols-[1.55fr_0.8fr]">
+      <div className="relative h-[560px] overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_22px_40px_rgba(15,23,42,0.12)]">
+        <div className="pointer-events-none absolute left-4 top-4 z-[450] rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-slate-800 shadow-sm backdrop-blur-md">
+          <p className="text-[11px] font-[800] uppercase tracking-[0.18em] text-slate-500">
+            Delhi Zone Overview
+          </p>
+          <p className="mt-1 text-sm font-[700] text-slate-900">
+            {activeCategory ? activeCategory : "All Categories"}
+          </p>
+          <p className="mt-1 text-xs text-slate-600">
+            Received {totalReceived} · Solved {totalSolved} · Pending{" "}
+            {totalOpen}
+          </p>
+          <p className="mt-1 text-[10px] font-[600] text-slate-500">
+            {deepRegionText}
+          </p>
         </div>
 
-        <div className="hidden rounded-2xl border border-slate-700/50 bg-slate-950/60 px-4 py-3 text-right backdrop-blur-md md:block">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-            Density Focus
-          </div>
-          <div className="mt-2 text-sm font-[800] text-white">
-            {hoveredMetrics?.name || "Delhi Overview"}
-          </div>
-          <div className="mt-1 text-[11px] text-slate-300">
-            {hoveredMetrics?.pending ?? 0} active complaints in focus
-          </div>
-        </div>
-      </div>
-
-      {/* Main SVG Layer */}
-      <svg
-        className="absolute inset-0 w-full h-full"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-      >
-        <text
-          x={50}
-          y={5}
-          textAnchor="middle"
-          fill="rgba(255,255,255,0.9)"
-          fontSize="3"
-          fontWeight="800"
-          style={{ letterSpacing: "0.12em", textTransform: "uppercase" }}
+        <MapContainer
+          bounds={DELHI_ZONES_FRAME_BOUNDS}
+          boundsOptions={{ padding: [28, 28] }}
+          minZoom={10}
+          maxZoom={16}
+          maxBounds={[
+            [DELHI_BOUNDS.minLat, DELHI_BOUNDS.minLng],
+            [DELHI_BOUNDS.maxLat, DELHI_BOUNDS.maxLng],
+          ]}
+          maxBoundsViscosity={0.8}
+          className="h-full w-full"
+          zoomControl={false}
         >
-          Delhi NCT Live Complaint Heatmap
-        </text>
+          <ZoomLevelWatcher onZoomChange={setMapZoom} />
+          <ZoomControl position="bottomleft" />
 
-        <rect
-          x="6"
-          y="11"
-          width="88"
-          height="72"
-          rx="5"
-          fill="rgba(2,6,23,0.1)"
-          stroke="rgba(148,163,184,0.12)"
-          strokeWidth="0.3"
-        />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          />
 
-        {DELHI_ZONE_CONFIG.map((region) => {
-          const metrics = zoneMap[region.id] || {
-            id: region.id,
-            name: region.name,
-            localities: region.localities,
-            target: region.target,
-            total: 0,
-            pending: 0,
-            resolved: 0,
-            escalated: 0,
-          };
-          const intensity = Math.max(0.2, metrics.pending / maxPending);
+          {DELHI_ZONE_CONFIG.map((zone) => {
+            const zoneMetrics = zoneById[zone.id];
+            const areaLoad = zoneMetrics.pending + zoneMetrics.escalated;
+            const loadScore = areaLoad / maxZoneLoad;
+            const zoneColor = getZonePalette(loadScore);
+            const isSelected = selectedZoneId === zone.id;
 
-          return (
-            <g
-              key={region.id}
-              onMouseEnter={() => setHoveredRegion(region.id)}
-              onMouseLeave={() => setHoveredRegion(null)}
-            >
-              <motion.rect
-                animate={{
-                  fill:
-                    hoveredRegion === region.id
-                      ? "rgba(15, 23, 42, 0.6)"
-                      : "rgba(15, 23, 42, 0.2)",
-                  stroke:
-                    hoveredRegion === region.id
-                      ? "rgba(59, 130, 246, 0.5)"
-                      : "rgba(51, 65, 85, 0.3)",
+            return (
+              <Rectangle
+                key={`zone-${zone.id}`}
+                bounds={zone.bounds}
+                pathOptions={{
+                  color: isSelected ? zoneColor.stroke : "#64748b",
+                  weight: isSelected ? 2 : 1.2,
+                  dashArray: isSelected ? undefined : "5 5",
+                  fillColor: zoneColor.fill,
+                  fillOpacity: isSelected ? 0.2 + loadScore * 0.22 : 0.08,
                 }}
-                x={region.x}
-                y={region.y}
-                width={region.w}
-                height={region.h}
-                rx="2"
-                strokeWidth="0.5"
-              />
-
-              <motion.rect
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: hoveredRegion === region.id ? 1 : 0.82,
-                  filter:
-                    hoveredRegion === region.id ? "blur(0px)" : "blur(1.6px)",
-                  scale: hoveredRegion === region.id ? 1.01 : 0.99,
-                  stroke:
-                    hoveredRegion === region.id
-                      ? "rgba(255,255,255,0.8)"
-                      : "rgba(255,255,255,0.18)",
+                eventHandlers={{
+                  click: () => setSelectedZoneId(zone.id),
                 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                x={region.x}
-                y={region.y}
-                width={region.w}
-                height={region.h}
-                fill={getColor(intensity)}
-                rx="4"
-                strokeWidth="0.42"
-              />
-
-              <motion.rect
-                animate={{
-                  opacity: hoveredRegion === region.id ? 1 : 0,
-                  filter:
-                    hoveredRegion === region.id
-                      ? "drop-shadow(0 0 16px rgba(96,165,250,0.6))"
-                      : "drop-shadow(0 0 0 rgba(0,0,0,0))",
-                }}
-                x={region.x - 0.9}
-                y={region.y - 0.9}
-                width={region.w + 1.8}
-                height={region.h + 1.8}
-                rx="4.8"
-                fill="transparent"
-                stroke="rgba(147,197,253,0.9)"
-                strokeWidth="0.5"
-              />
-
-              <rect
-                x={region.x + 1.4}
-                y={region.y + 2.3}
-                width={Math.min(region.w - 2.8, 20)}
-                height="5.5"
-                rx="2"
-                fill="rgba(2,6,23,0.56)"
-                stroke="rgba(148,163,184,0.22)"
-                strokeWidth="0.3"
-              />
-              <text
-                x={region.x + 2.8}
-                y={region.y + 5.8}
-                fill="rgba(255,255,255,0.96)"
-                fontSize="1.45"
-                fontWeight="800"
-                style={{ pointerEvents: "none" }}
               >
-                {getShortLabel(metrics.name)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+                <MapTooltip direction="top" sticky opacity={0.95}>
+                  <div className="min-w-[170px]">
+                    <p className="text-[11px] font-[700] text-slate-900">
+                      {zone.name}
+                    </p>
+                    <p className="text-[11px] text-slate-700">
+                      Received {zoneMetrics.total} · Solved{" "}
+                      {zoneMetrics.resolved} · Pending {zoneMetrics.pending}
+                    </p>
+                  </div>
+                </MapTooltip>
+              </Rectangle>
+            );
+          })}
 
-      <div className="pointer-events-none absolute right-6 top-[6.75rem] z-20 w-[280px] rounded-[1.6rem] border border-slate-700/60 bg-slate-950/78 p-4 text-white shadow-[0_18px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-              {hoveredRegionConfig ? "Selected Zone" : "Hover to Inspect"}
-            </div>
-            <div className="mt-2 text-lg font-[800] leading-tight text-white">
-              {hoveredMetrics?.name || "Delhi Zone Details"}
-            </div>
-          </div>
-          <div className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-[800] uppercase tracking-[0.2em] text-slate-300">
-            {hoveredRegionConfig ? "Live" : "Standby"}
-          </div>
-        </div>
+          {DELHI_ZONE_CONFIG.map((zone) => {
+            const zoneMetrics = zoneById[zone.id];
+            const areaLoad = zoneMetrics.pending + zoneMetrics.escalated;
+            const loadScore = areaLoad / maxZoneLoad;
+            const zoneColor = getZonePalette(loadScore);
+            const isSelected = selectedZoneId === zone.id;
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
-          <div className="rounded-xl bg-rose-500/10 px-3 py-2">
-            <div className="font-[800] text-rose-300">{hoveredMetrics?.pending ?? 0}</div>
-            <div className="mt-1 text-slate-400">Active</div>
-          </div>
-          <div className="rounded-xl bg-emerald-500/10 px-3 py-2">
-            <div className="font-[800] text-emerald-300">{hoveredMetrics?.resolved ?? 0}</div>
-            <div className="mt-1 text-slate-400">Resolved</div>
-          </div>
-          <div className="rounded-xl bg-amber-500/10 px-3 py-2">
-            <div className="font-[800] text-amber-300">{hoveredMetrics?.escalated ?? 0}</div>
-            <div className="mt-1 text-slate-400">Escalated</div>
-          </div>
-        </div>
+            return (
+              <CircleMarker
+                key={`zone-center-${zone.id}`}
+                center={zone.center}
+                radius={isSelected ? 11 : 7}
+                pathOptions={{
+                  color: isSelected ? "#0f172a" : "#ffffff",
+                  fillColor: zoneColor.stroke,
+                  fillOpacity: isSelected ? 0.95 : 0.82,
+                  weight: isSelected ? 2 : 1,
+                }}
+                eventHandlers={{
+                  click: () => setSelectedZoneId(zone.id),
+                }}
+              >
+                <MapTooltip direction="top" offset={[0, -6]} opacity={0.95}>
+                  <div className="min-w-[170px]">
+                    <p className="text-[11px] font-[700] text-slate-900">
+                      {zone.name}
+                    </p>
+                    <p className="text-[11px] text-slate-700">
+                      Received {zoneMetrics.total} · Solved{" "}
+                      {zoneMetrics.resolved} · Pending {zoneMetrics.pending}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      Click to focus this zone
+                    </p>
+                  </div>
+                </MapTooltip>
+              </CircleMarker>
+            );
+          })}
 
-        <div className="mt-4 rounded-2xl border border-white/8 bg-white/5 px-3 py-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-            Localities
-          </div>
-          <div className="mt-2 text-[12px] leading-relaxed text-slate-200">
-            {hoveredMetrics?.localities.join(", ") ||
-              "Hover over a zone to reveal its localities and civic profile."}
-          </div>
-        </div>
+          {showDeepRegions &&
+            DELHI_SUBZONES.filter(
+              (subZone) => subZone.parent === selectedZoneId,
+            ).map((subZone) => {
+              const subZoneLoad = subZoneStats[subZone.id] || 1;
+              const intensity = subZoneLoad / maxSubZoneLoad;
+              const tone =
+                intensity >= 0.8
+                  ? { stroke: "#ef4444", fill: "#fda4af" }
+                  : intensity >= 0.6
+                    ? { stroke: "#f97316", fill: "#fdba74" }
+                    : intensity >= 0.45
+                      ? { stroke: "#eab308", fill: "#fde68a" }
+                      : { stroke: "#14b8a6", fill: "#99f6e4" };
 
-        <div className="mt-3 text-[11px] leading-relaxed text-slate-300">
-          {hoveredMetrics?.target ||
-            "The hover panel will surface zone-specific complaint context here."}
-        </div>
+              return (
+                <Rectangle
+                  key={`subzone-${subZone.id}`}
+                  bounds={subZone.bounds}
+                  pathOptions={{
+                    color: tone.stroke,
+                    weight: 1.5,
+                    dashArray: "6 4",
+                    fillColor: tone.fill,
+                    fillOpacity: 0.16 + intensity * 0.18,
+                  }}
+                >
+                  <MapTooltip direction="top" sticky opacity={0.95}>
+                    <div className="min-w-[170px]">
+                      <p className="text-[11px] font-[700] text-slate-900">
+                        {subZone.name}
+                      </p>
+                      <p className="text-[11px] text-slate-700">
+                        Parent: {zoneById[subZone.parent].name}
+                      </p>
+                      <p className="text-[10px] text-slate-500">
+                        Pending (est.) {subZoneLoad}
+                      </p>
+                    </div>
+                  </MapTooltip>
+                </Rectangle>
+              );
+            })}
+        </MapContainer>
       </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-700/50 bg-slate-900/60 px-5 py-3 backdrop-blur-md">
-        <span className="text-[10px] uppercase tracking-widest font-black text-slate-400">
-          Delhi Density Index (
-          {activeCategory === "All" ? "all categories" : activeCategory})
-        </span>
-        <div className="flex flex-wrap items-center gap-4">
-          {[
-            { color: "bg-emerald-400", label: "Safe" },
-            { color: "bg-blue-500", label: "Moderate" },
-            { color: "bg-amber-400", label: "High" },
-            { color: "bg-rose-500", label: "Critical" },
-          ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${color}`} />
-              <span className="text-[10px] text-slate-400 font-[800] uppercase tracking-wider">
-                {label}
-              </span>
-            </div>
-          ))}
+      <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.1)]">
+        <h4 className="text-sm font-[800] text-slate-900">Zone Focus</h4>
+        <p className="mt-1 text-xs text-slate-500">
+          Selected:{" "}
+          <span className="font-[700] text-slate-700">{selectedZone.name}</span>
+        </p>
+        <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <p className="text-[11px] text-slate-500">Complaint Received</p>
+          <p className="text-xl font-[800] text-slate-900">
+            {selectedZone.total}
+          </p>
+          <p className="mt-2 text-[11px] text-slate-500">Solved</p>
+          <p className="text-lg font-[800] text-emerald-600">
+            {selectedZone.resolved}
+          </p>
+          <p className="mt-2 text-[11px] text-slate-500">Pending</p>
+          <p className="text-xl font-[800] text-rose-600">
+            {selectedZone.pending}
+          </p>
         </div>
+
+        <div className="mt-3 space-y-2">
+          {DELHI_ZONE_CONFIG.map((zone) => {
+            const zoneMetrics = zoneById[zone.id];
+            const isSelected = selectedZoneId === zone.id;
+            return (
+              <button
+                key={`panel-${zone.id}`}
+                type="button"
+                onClick={() => setSelectedZoneId(zone.id)}
+                className={`w-full rounded-xl border px-3 py-2 text-left transition ${
+                  isSelected
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <p className="text-[11px] font-[700] leading-tight">
+                  {zone.name}
+                </p>
+                <p
+                  className={`mt-1 text-[10px] ${isSelected ? "text-slate-200" : "text-slate-500"}`}
+                >
+                  Received {zoneMetrics.total} · Solved {zoneMetrics.resolved} ·
+                  Pending {zoneMetrics.pending}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="mt-3 text-[10px] text-slate-500">
+          Tip: click a zone marker or card, then zoom in to see its deeper
+          regions.
+        </p>
       </div>
     </div>
   );
 }
 
-const resolutionTimeData = mockAreaStats.map((w) => ({
-  area: w.area,
-  avgTime: w.avgResolutionHours,
+const resolutionTimeData = DELHI_ZONE_CONFIG.map((zone) => ({
+  zone: zone.name,
+  avgTime: 0,
   target: 72,
 }));
 
@@ -346,15 +757,6 @@ const defaultSlaHistoryData = [
   { month: "Mar", compliance: 82 },
 ];
 
-const defaultRadarData = [
-  { metric: "SLA Compliance", score: 82 },
-  { metric: "Verification Rate", score: 67 },
-  { metric: "Citizen Satisfaction", score: 84 },
-  { metric: "Resolution Speed", score: 71 },
-  { metric: "Escalation Mgmt", score: 78 },
-  { metric: "Participation", score: 63 },
-];
-
 const defaultKpiData = {
   mtta: 2.5,
   mttr: 48,
@@ -363,9 +765,7 @@ const defaultKpiData = {
 };
 
 export default function AdminAnalytics() {
-  const [dateRange, setDateRange] = useState("7d");
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [isExporting, setIsExporting] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("");
   const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -377,11 +777,13 @@ export default function AdminAnalytics() {
     return () => unsubscribe();
   }, []);
 
+  const filteredComplaints = useMemo(() => complaints, [complaints]);
+
   // Calculate SLA history from actual data - last 6 months
   const slaHistoryData = useMemo(() => {
     const monthData: Record<string, { total: number; met: number }> = {};
 
-    complaints.forEach((c) => {
+    filteredComplaints.forEach((c) => {
       if (!c.createdAt) return;
       const date = new Date(c.createdAt);
       const monthKey = date.toLocaleDateString("en-US", {
@@ -418,11 +820,11 @@ export default function AdminAnalytics() {
       });
     }
     return months;
-  }, [complaints]);
+  }, [filteredComplaints]);
 
   const delhiComplaints = useMemo(
-    () => complaints.filter((c) => isDelhiComplaint(c)),
-    [complaints],
+    () => filteredComplaints.filter((c) => isDelhiComplaint(c)),
+    [filteredComplaints],
   );
 
   const heatmapZoneStats = useMemo<ZoneStats[]>(() => {
@@ -445,7 +847,7 @@ export default function AdminAnalytics() {
       );
 
     delhiComplaints
-      .filter((c) => activeCategory === "All" || c.category === activeCategory)
+      .filter((c) => !activeCategory || c.category === activeCategory)
       .forEach((complaint) => {
         const zoneId = inferDelhiZone(complaint);
         const zone = statsByZone[zoneId];
@@ -466,18 +868,22 @@ export default function AdminAnalytics() {
   }, [activeCategory, delhiComplaints]);
 
   // Calculate performance metrics from actual data
-  const { kpiData, radarData, resolutionByArea, areaStats } = useMemo(() => {
-    if (complaints.length === 0) {
+  const { kpiData, resolutionByZone, areaStats } = useMemo(() => {
+    if (filteredComplaints.length === 0) {
       return {
-        kpiData: defaultKpiData,
-        radarData: defaultRadarData,
-        resolutionByArea: resolutionTimeData,
-        areaStats: mockAreaStats,
+        kpiData: {
+          mtta: 0,
+          mttr: 0,
+          slaCompliance: 0,
+          satisfactionScore: 0,
+        },
+        resolutionByZone: [],
+        areaStats: [],
       };
     }
 
     // Calculate MTTA - mean time to assignment (hours from submission to assigned)
-    const assignmentTimes = complaints
+    const assignmentTimes = filteredComplaints
       .filter((c) => c.assignedAt || c.createdAt)
       .map((c) => {
         const created = new Date(c.createdAt).getTime();
@@ -496,7 +902,7 @@ export default function AdminAnalytics() {
         : defaultKpiData.mtta;
 
     // Calculate MTTR - mean time to resolution
-    const resolutionTimes = complaints
+    const resolutionTimes = filteredComplaints
       .filter((c) => ["Resolved", "Closed"].includes(c.status))
       .map((c) => {
         const created = new Date(c.createdAt).getTime();
@@ -513,7 +919,7 @@ export default function AdminAnalytics() {
         : defaultKpiData.mttr;
 
     // Calculate SLA Compliance
-    const resolved = complaints.filter((c) =>
+    const resolved = filteredComplaints.filter((c) =>
       ["Resolved", "Closed"].includes(c.status),
     );
     const slaMet = resolved.filter(
@@ -523,7 +929,9 @@ export default function AdminAnalytics() {
       resolved.length > 0 ? Math.round((slaMet / resolved.length) * 100) : 0;
 
     // Calculate Satisfaction Score from ratings
-    const ratings = complaints.filter((c) => c.rating).map((c) => c.rating);
+    const ratings = filteredComplaints
+      .filter((c) => c.rating)
+      .map((c) => c.rating);
     const satisfactionScore =
       ratings.length > 0
         ? Math.round(
@@ -531,38 +939,9 @@ export default function AdminAnalytics() {
           ) / 10
         : defaultKpiData.satisfactionScore;
 
-    // Calculate metrics for radar
-    const escalated = complaints.filter((c) => c.escalated).length;
-    const escalationMgmt =
-      100 - Math.round((escalated / Math.max(complaints.length, 1)) * 100);
-
-    const verified = complaints.filter(
-      (c) => c.verifiedBy || c.status !== "Submitted",
-    ).length;
-    const verificationRate = Math.round(
-      (verified / Math.max(complaints.length, 1)) * 100,
-    );
-
-    const resolutionSpeed = Math.min(100, Math.round(100 - (mttr / 72) * 50));
-
-    const radarScores = [
-      { metric: "SLA Compliance", score: slaCompliance },
-      { metric: "Verification Rate", score: verificationRate },
-      {
-        metric: "Citizen Satisfaction",
-        score: Math.round(satisfactionScore * 20),
-      },
-      { metric: "Resolution Speed", score: resolutionSpeed },
-      { metric: "Escalation Mgmt", score: escalationMgmt },
-      {
-        metric: "Participation",
-        score: Math.min(100, Math.round((complaints.length / 100) * 100)),
-      },
-    ];
-
     // Group by area with full stats
     const areaStatsMap: Record<string, any> = {};
-    complaints.forEach((c) => {
+    filteredComplaints.forEach((c) => {
       const area = c.area || c.ward || "Other";
       if (!areaStatsMap[area]) {
         areaStatsMap[area] = {
@@ -614,21 +993,58 @@ export default function AdminAnalytics() {
       }))
       .sort((a, b) => b.totalComplaints - a.totalComplaints);
 
-    const resolutionByAreaData = areaStatsWithMetrics
-      .map((stat: any) => ({
-        area: stat.area,
-        avgTime: stat.avgResolutionHours,
-        target: 72,
-      }))
-      .slice(0, 8);
+    const zoneStatsMap: Record<
+      DelhiZoneId,
+      { totalHours: number; count: number }
+    > = DELHI_ZONE_CONFIG.reduce(
+      (acc, zone) => {
+        acc[zone.id] = { totalHours: 0, count: 0 };
+        return acc;
+      },
+      {} as Record<DelhiZoneId, { totalHours: number; count: number }>,
+    );
+
+    filteredComplaints.forEach((c) => {
+      if (!["Resolved", "Closed"].includes(c.status)) return;
+      if (!c.createdAt || !c.updatedAt) return;
+
+      const created = new Date(c.createdAt).getTime();
+      const updated = new Date(c.updatedAt).getTime();
+      if (Number.isNaN(created) || Number.isNaN(updated) || updated < created)
+        return;
+
+      const zoneId = inferDelhiZone(c);
+      zoneStatsMap[zoneId].totalHours += (updated - created) / (1000 * 60 * 60);
+      zoneStatsMap[zoneId].count += 1;
+    });
+
+    const resolutionByZoneData = DELHI_ZONE_CONFIG.map((zone) => ({
+      zone: zone.name,
+      avgTime:
+        zoneStatsMap[zone.id].count > 0
+          ? Math.round(
+              zoneStatsMap[zone.id].totalHours / zoneStatsMap[zone.id].count,
+            )
+          : 0,
+      target: 72,
+    }));
 
     return {
       kpiData: { mtta, mttr, slaCompliance, satisfactionScore },
-      radarData: radarScores,
-      resolutionByArea: resolutionByAreaData,
+      resolutionByZone: resolutionByZoneData,
       areaStats: areaStatsWithMetrics,
     };
-  }, [complaints]);
+  }, [filteredComplaints]);
+
+  const summaryCounts = useMemo(() => {
+    const received = filteredComplaints.length;
+    const solved = filteredComplaints.filter((c) =>
+      ["Resolved", "Closed"].includes(c.status),
+    ).length;
+    const pending = Math.max(0, received - solved);
+
+    return { received, solved, pending };
+  }, [filteredComplaints]);
 
   if (loading && complaints.length === 0) {
     return (
@@ -650,52 +1066,8 @@ export default function AdminAnalytics() {
             Analytics & Heatmap
           </h1>
           <p className="text-white/90 text-sm mt-1">
-            Delhi NCT civic intelligence dashboard
+            Delhi NCT civic intelligence dashboard · all records
           </p>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex bg-white/88 backdrop-blur-xl border border-white rounded-2xl overflow-hidden shadow-sm">
-            {["7d", "30d", "90d"].map((d) => (
-              <button
-                key={d}
-                onClick={() => setDateRange(d)}
-                className={`px-4 py-2 text-sm font-[500] transition-colors ${
-                  dateRange === d
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={async () => {
-              try {
-                setIsExporting(true);
-                await exportToPDF(
-                  "analytics-dashboard",
-                  "admin-analytics",
-                  "Complaint Analytics Report",
-                );
-                toast.success("PDF exported successfully");
-              } catch (error) {
-                console.error("Export failed:", error);
-                toast.error("Failed to export PDF");
-              } finally {
-                setIsExporting(false);
-              }
-            }}
-            disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white/88 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm disabled:opacity-50"
-          >
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            {isExporting ? "Exporting..." : "Export PDF"}
-          </button>
         </div>
       </div>
 
@@ -707,7 +1079,7 @@ export default function AdminAnalytics() {
               Live Complaint Heatmap
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Delhi-only zone density with live complaint intensity
+              Delhi-only zone map with zoom-based deep regions
             </p>
           </div>
           <div className="flex gap-2">
@@ -716,8 +1088,8 @@ export default function AdminAnalytics() {
               onChange={(e) => setActiveCategory(e.target.value)}
               className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none text-slate-700 cursor-pointer"
             >
+              <option value="">Select Category</option>
               {[
-                "All",
                 "Pothole",
                 "Garbage",
                 "Water",
@@ -736,48 +1108,35 @@ export default function AdminAnalytics() {
           activeCategory={activeCategory}
           zoneStats={heatmapZoneStats}
         />
-
-        <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {heatmapZoneStats.map((zone) => (
-            <div
-              key={zone.id}
-              className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2"
-            >
-              <p className="text-[11px] font-[700] text-slate-700 truncate">
-                {zone.name}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Active:{" "}
-                <span className="font-[700] text-rose-600">{zone.pending}</span>{" "}
-                · Resolved:{" "}
-                <span className="font-[700] text-emerald-600">
-                  {zone.resolved}
-                </span>
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">
-                Target: {zone.target}
-              </p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* KPI Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: "MTTA",
-            value: `${kpiData.mtta}h`,
-            target: "< 4h",
-            ok: kpiData.mtta < 4,
-            desc: "Mean Time to Assignment",
+            label: "Complaint Received",
+            value: `${summaryCounts.received}`,
+            target: "All records",
+            ok: true,
+            desc: "New complaints",
           },
           {
-            label: "MTTR",
-            value: `${kpiData.mttr}h`,
-            target: "< 72h",
-            ok: kpiData.mttr < 72,
-            desc: "Mean Time to Resolution",
+            label: "Solved",
+            value: `${summaryCounts.solved}`,
+            target: "Higher is better",
+            ok:
+              summaryCounts.solved >=
+              Math.max(1, Math.round(summaryCounts.received * 0.5)),
+            desc: "Resolved / closed",
+          },
+          {
+            label: "Pending",
+            value: `${summaryCounts.pending}`,
+            target: "Lower is better",
+            ok:
+              summaryCounts.pending <=
+              Math.max(3, Math.round(summaryCounts.received * 0.4)),
+            desc: "Still open",
           },
           {
             label: "SLA Compliance",
@@ -785,13 +1144,6 @@ export default function AdminAnalytics() {
             target: "> 80%",
             ok: kpiData.slaCompliance > 80,
             desc: "Within SLA window",
-          },
-          {
-            label: "Satisfaction",
-            value: `${kpiData.satisfactionScore}★`,
-            target: "> 4.0",
-            ok: kpiData.satisfactionScore >= 4,
-            desc: "Post-resolution rating",
           },
         ].map(({ label, value, target, ok, desc }) => (
           <div
@@ -820,7 +1172,7 @@ export default function AdminAnalytics() {
             SLA Compliance Trend
           </h3>
           <p className="text-xs text-slate-400 mb-4">
-            6-month improvement trajectory
+            6-month view based on complaints in selected range
           </p>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={slaHistoryData}>
@@ -851,6 +1203,14 @@ export default function AdminAnalytics() {
                   fontSize: "12px",
                   color: "#f1f5f9",
                 }}
+                labelStyle={{ color: "#e2e8f0", fontWeight: 600 }}
+                itemStyle={{ color: "#f8fafc" }}
+                formatter={(value: number) => [
+                  <span style={{ color: "#f8fafc", fontWeight: 700 }}>
+                    {value}h
+                  </span>,
+                  <span style={{ color: "#f8fafc" }}>Avg Time</span>,
+                ]}
               />
               <Area
                 type="monotone"
@@ -876,11 +1236,11 @@ export default function AdminAnalytics() {
         {/* Resolution Time by Area */}
         <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-5">
           <h3 className="text-base font-[700] text-slate-900 mb-1">
-            Avg Resolution Time by Area
+            Avg Resolution Time by Zone
           </h3>
           <p className="text-xs text-slate-400 mb-4">Hours · Target: 72h</p>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={resolutionByArea} layout="vertical">
+            <BarChart data={resolutionByZone} layout="vertical">
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="#f1f5f9"
@@ -893,12 +1253,12 @@ export default function AdminAnalytics() {
                 tickLine={false}
               />
               <YAxis
-                dataKey="area"
+                dataKey="zone"
                 type="category"
                 tick={{ fontSize: 11, fill: "#94a3b8" }}
                 axisLine={false}
                 tickLine={false}
-                width={50}
+                width={110}
               />
               <Tooltip
                 contentStyle={{
@@ -908,9 +1268,12 @@ export default function AdminAnalytics() {
                   fontSize: "12px",
                   color: "#f1f5f9",
                 }}
+                labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
+                itemStyle={{ color: "#f8fafc" }}
+                formatter={(value: number) => [`${value}h`, "Avg Time"]}
               />
-              <Bar dataKey="avgTime" radius={[0, 6, 6, 0]}>
-                {resolutionByArea.map((entry, i) => (
+              <Bar dataKey="avgTime" name="Avg Time" radius={[0, 6, 6, 0]}>
+                {resolutionByZone.map((entry, i) => (
                   <Cell
                     key={i}
                     fill={
@@ -928,172 +1291,87 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Performance Radar */}
-        <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-5">
-          <h3 className="text-base font-[700] text-slate-900 mb-1">
-            Performance Overview
+      {/* Area Stats Table */}
+      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
+        <div className="p-5 border-b border-slate-100">
+          <h3 className="text-base font-[700] text-slate-900">
+            Area Performance Breakdown
           </h3>
-          <p className="text-xs text-slate-400 mb-4">City-wide scores</p>
-          <ResponsiveContainer width="100%" height={220}>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="#f1f5f9" />
-              <PolarAngleAxis
-                dataKey="metric"
-                tick={{ fontSize: 9, fill: "#94a3b8" }}
-              />
-              <PolarRadiusAxis
-                angle={30}
-                domain={[0, 100]}
-                tick={{ fontSize: 9, fill: "#94a3b8" }}
-              />
-              <Radar
-                name="Score"
-                dataKey="score"
-                stroke="#3B82F6"
-                fill="#3B82F6"
-                fillOpacity={0.2}
-                strokeWidth={2}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
         </div>
-
-        {/* Area Stats Table */}
-        <div className="lg:col-span-2 bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h3 className="text-base font-[700] text-slate-900">
-              Area Performance Breakdown
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                    Area
-                  </th>
-                  <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                    Resolved
-                  </th>
-                  <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                    Avg Time
-                  </th>
-                  <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                    Health
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {(areaStats && areaStats.length > 0
-                  ? areaStats
-                  : mockAreaStats
-                ).map((w) => (
-                  <tr
-                    key={w.area}
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-[600] text-slate-800">
-                      {w.area}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      {w.totalComplaints}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="text-emerald-600 font-[600]">
-                        {w.resolved}
-                      </span>
-                      <span className="text-slate-400 text-xs ml-1">
-                        ({Math.round((w.resolved / w.totalComplaints) * 100)}%)
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span
-                        className={
-                          w.avgResolutionHours > 72
-                            ? "text-red-600 font-[600]"
-                            : w.avgResolutionHours > 48
-                              ? "text-amber-600 font-[600]"
-                              : "text-emerald-600 font-[600]"
-                        }
-                      >
-                        {w.avgResolutionHours}h
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${w.civicHealthScore >= 85 ? "bg-emerald-500" : w.civicHealthScore >= 70 ? "bg-amber-500" : "bg-red-500"}`}
-                            style={{ width: `${w.civicHealthScore}%` }}
-                          />
-                        </div>
-                        <span
-                          className={`text-xs font-[700] ${w.civicHealthScore >= 85 ? "text-emerald-600" : w.civicHealthScore >= 70 ? "text-amber-600" : "text-red-600"}`}
-                        >
-                          {w.civicHealthScore}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Transparency Log */}
-      <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-violet-600/30 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-violet-400" />
-          </div>
-          <h3 className="text-base font-[700] text-white">
-            Transparency Log — Public Summary
-          </h3>
-          <span className="text-xs text-violet-400 font-[600] ml-auto">
-            March 2026
-          </span>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {(areaStats && areaStats.length > 0
-            ? areaStats.slice(0, 4)
-            : mockAreaStats.slice(0, 4)
-          ).map((w) => (
-            <div
-              key={w.area}
-              className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50"
-            >
-              <div className="text-sm font-[700] text-white mb-1">{w.area}</div>
-              <div className="text-xs text-slate-400">
-                Resolved{" "}
-                <span className="text-emerald-400 font-[600]">
-                  {w.resolved} complaints
-                </span>{" "}
-                this month. Avg resolution:{" "}
-                <span className="text-blue-400 font-[600]">
-                  {w.avgResolutionHours}h
-                </span>
-                . Civic Health Score:{" "}
-                <span
-                  className={`font-[700] ${w.civicHealthScore >= 85 ? "text-emerald-400" : w.civicHealthScore >= 70 ? "text-amber-400" : "text-red-400"}`}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="text-left px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
+                  Area
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
+                  Received
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
+                  Solved
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
+                  Pending
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
+                  Avg Time
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {areaStats.map((w) => (
+                <tr
+                  key={w.area}
+                  className="hover:bg-slate-50 transition-colors"
                 >
-                  {w.civicHealthScore}/100
-                </span>
-                .
-              </div>
-            </div>
-          ))}
+                  <td className="px-4 py-3 font-[600] text-slate-800">
+                    {w.area}
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {w.totalComplaints}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-emerald-600 font-[600]">
+                      {w.resolved}
+                    </span>
+                    <span className="text-slate-400 text-xs ml-1">
+                      ({Math.round((w.resolved / w.totalComplaints) * 100)}%)
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-rose-600 font-[600]">
+                      {Math.max(0, w.totalComplaints - w.resolved)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span
+                      className={
+                        w.avgResolutionHours > 72
+                          ? "text-red-600 font-[600]"
+                          : w.avgResolutionHours > 48
+                            ? "text-amber-600 font-[600]"
+                            : "text-emerald-600 font-[600]"
+                      }
+                    >
+                      {w.avgResolutionHours}h
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {areaStats.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-sm text-slate-400"
+                  >
+                    No area data found in the selected date range.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-        <p className="text-xs text-slate-600 mt-4">
-          * Public-facing version available without PII. Data updated daily at
-          midnight.
-        </p>
       </div>
     </div>
   );
