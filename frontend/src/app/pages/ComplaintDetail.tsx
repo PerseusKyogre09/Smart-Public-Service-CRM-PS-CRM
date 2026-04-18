@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   MapPin,
   Clock,
-  Share2,
   Copy,
   AlertCircle,
   CheckCircle,
@@ -61,7 +60,7 @@ export default function ComplaintDetail() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [showEscalate, setShowEscalate] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
@@ -127,33 +126,100 @@ export default function ComplaintDetail() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleShareAsImage = async () => {
-    if (!shareCardRef.current) return;
-    setIsSharing(true);
+  const getEvidenceImageUrl = () => {
+    if (
+      typeof complaint?.imageUrl === "string" &&
+      complaint.imageUrl.startsWith("http")
+    ) {
+      return complaint.imageUrl;
+    }
+    if (
+      typeof complaint?.photoUrl === "string" &&
+      complaint.photoUrl.startsWith("http")
+    ) {
+      return complaint.photoUrl;
+    }
+    const photos = complaint?.photos;
+    if (
+      Array.isArray(photos) &&
+      typeof photos[0] === "string" &&
+      photos[0].startsWith("http")
+    ) {
+      return photos[0];
+    }
+    if (typeof photos === "string" && photos.startsWith("http")) {
+      return photos;
+    }
+    return "";
+  };
+
+  const evidenceImageUrl = getEvidenceImageUrl();
+
+  const visibleTimeline = (complaint?.timeline || []).filter((event: any) => {
+    const note = String(event?.note || "").toLowerCase();
+    return !(
+      note.includes("share_card_url:") ||
+      note.includes("share card saved to gallery") ||
+      note.includes("automatic report card generation") ||
+      note.includes("auto share card saved")
+    );
+  });
+
+  const generateShareCardDataUrl = async () => {
+    if (!shareCardRef.current) {
+      throw new Error("Share card not ready");
+    }
+
+    await new Promise((r) => setTimeout(r, 120));
+
     try {
-      // Small delay to ensure styles are ready
-      await new Promise((r) => setTimeout(r, 100));
-      const dataUrl = await toPng(shareCardRef.current, {
+      return await toPng(shareCardRef.current, {
         cacheBust: true,
         backgroundColor: "#ffffff",
         quality: 1,
+        pixelRatio: 2,
         style: {
           opacity: "1",
           visibility: "visible",
           position: "static",
         },
       });
+    } catch {
+      // Retry without evidence image when third-party image CORS taints canvas.
+      return await toPng(shareCardRef.current, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        quality: 1,
+        pixelRatio: 2,
+        style: {
+          opacity: "1",
+          visibility: "visible",
+          position: "static",
+        },
+        filter: (node) =>
+          !(
+            node instanceof HTMLImageElement &&
+            node.getAttribute("data-share-evidence") === "true"
+          ),
+      });
+    }
+  };
 
+  const handleDownloadImage = async () => {
+    if (!shareCardRef.current) return;
+    setIsDownloadingImage(true);
+    try {
+      const dataUrl = await generateShareCardDataUrl();
       const link = document.createElement("a");
       link.download = `CivicPulse-${complaint.id}.png`;
       link.href = dataUrl;
       link.click();
-      toast.success("Shareable image generated and downloaded!");
+      toast.success("Image downloaded successfully!");
     } catch (err) {
-      console.error("oops, something went wrong!", err);
-      toast.error("Failed to generate shareable image.");
+      console.error("Download image error:", err);
+      toast.error("Failed to download image. Please try again.");
     } finally {
-      setIsSharing(false);
+      setIsDownloadingImage(false);
     }
   };
 
@@ -182,7 +248,9 @@ export default function ComplaintDetail() {
       setComment("");
     } catch (error: any) {
       console.error("Failed to submit rating:", error);
-      toast.error(error.message || "Failed to submit rating. Please try again.");
+      toast.error(
+        error.message || "Failed to submit rating. Please try again.",
+      );
     } finally {
       setIsSubmittingRating(false);
     }
@@ -204,7 +272,9 @@ export default function ComplaintDetail() {
       setComplaint(updated);
     } catch (error: any) {
       console.error("Failed to close complaint:", error);
-      toast.error(error.message || "Failed to close complaint. Please try again.");
+      toast.error(
+        error.message || "Failed to close complaint. Please try again.",
+      );
     } finally {
       setIsSubmittingRating(false);
     }
@@ -296,9 +366,32 @@ export default function ComplaintDetail() {
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
                   Report Description
                 </p>
-                <p className="text-2xl font-bold text-slate-900 leading-relaxed italic">
-                  "{complaint.description}"
-                </p>
+                <div className="flex gap-6 items-start">
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold text-slate-900 leading-relaxed italic">
+                      "{complaint.description}"
+                    </p>
+                  </div>
+                  {evidenceImageUrl && (
+                    <div className="shrink-0">
+                      <div className="p-2 bg-slate-50 rounded-[2.5rem] border-4 border-white shadow-xl rotate-2">
+                        <img
+                          src={evidenceImageUrl}
+                          alt="Evidence"
+                          data-share-evidence="true"
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                          className="w-48 h-48 object-cover rounded-[2rem]"
+                        />
+                      </div>
+                      <div className="text-center mt-3">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                          Live Evidence Capture
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-start gap-5 p-6 border-l-4 border-orange-500 bg-orange-50/60 rounded-r-[2rem]">
@@ -386,16 +479,16 @@ export default function ComplaintDetail() {
               {copied ? "Copied!" : "Copy ID"}
             </button>
             <button
-              onClick={handleShareAsImage}
-              disabled={isSharing}
-              className="group flex items-center gap-1.5 text-xs font-black text-orange-700 hover:text-orange-800 px-3 py-2 bg-orange-50 hover:bg-orange-100 rounded-lg transition-all border border-orange-100 shadow-sm"
+              onClick={handleDownloadImage}
+              disabled={isDownloadingImage}
+              className="group flex items-center gap-1.5 text-xs font-black text-sky-700 hover:text-sky-800 px-3 py-2 bg-sky-50 hover:bg-sky-100 rounded-lg transition-all border border-sky-100 shadow-sm"
             >
-              {isSharing ? (
-                <div className="w-3.5 h-3.5 border-2 border-orange-600/30 border-t-orange-600 rounded-full animate-spin" />
+              {isDownloadingImage ? (
+                <div className="w-3.5 h-3.5 border-2 border-sky-600/30 border-t-sky-600 rounded-full animate-spin" />
               ) : (
                 <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
               )}
-              Share Image
+              Download Image
             </button>
           </div>
         </div>
@@ -678,26 +771,66 @@ export default function ComplaintDetail() {
         </div>
 
         {/* Photo */}
-        {complaint.imageUrl && (
+        {evidenceImageUrl && (
           <div className="px-5 pb-5">
             <div className="text-xs font-[600] text-slate-400 mb-2 uppercase tracking-wider">
-              Evidence Photos
+              Evidence Gallery
             </div>
-            <div className="flex gap-3">
-              <img
-                src={complaint.imageUrl}
-                alt="Complaint evidence"
-                className="w-32 h-24 object-cover rounded-xl border border-slate-100"
-              />
-              {complaint.status === "Resolved" && (
-                <div className="w-32 h-24 bg-emerald-50 rounded-xl border border-emerald-100 flex flex-col items-center justify-center gap-1">
-                  <Camera className="w-5 h-5 text-emerald-500" />
-                  <span className="text-xs text-emerald-600 font-[600]">
-                    Resolution Proof
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="relative group cursor-pointer overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-50 aspect-square">
+                <img
+                  src={evidenceImageUrl}
+                  alt="Complaint evidence"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-3 text-center">
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest mb-1">
+                    {complaint.category}
                   </span>
-                  <span className="text-xs text-emerald-500">GPS Verified</span>
+                  <span className="text-[10px] text-white/80 font-medium tracking-tighter">
+                    #{complaint.id.slice(-6).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              {complaint.status === "Resolved" && (
+                <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-100 flex flex-col items-center justify-center gap-2 aspect-square relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl -mr-6 -mt-6" />
+                  <Camera className="w-8 h-8 text-emerald-500 mb-1" />
+                  <div className="text-center px-2">
+                    <div className="text-[10px] text-emerald-700 font-black uppercase tracking-widest leading-none mb-1">
+                      Resolution
+                    </div>
+                    <div className="text-[9px] text-emerald-500 font-bold">
+                      GPS Verified
+                    </div>
+                  </div>
                 </div>
               )}
+
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  onClick={handleDownloadImage}
+                  disabled={isDownloadingImage}
+                  className="bg-sky-50 rounded-2xl border-2 border-sky-100 flex flex-col items-center justify-center gap-2 aspect-square group hover:bg-sky-100 transition-all border-dashed"
+                >
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    {isDownloadingImage ? (
+                      <div className="w-4 h-4 border-2 border-sky-600/30 border-t-sky-600 rounded-full animate-spin" />
+                    ) : (
+                      <Download className="w-5 h-5 text-sky-600" />
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-[9px] text-sky-700 font-black uppercase tracking-widest">
+                      Download
+                    </div>
+                    <div className="text-[9px] text-sky-500 font-bold">
+                      PNG File
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -758,7 +891,7 @@ export default function ComplaintDetail() {
 
         {/* Event log */}
         <div className="space-y-4">
-          {(complaint.timeline || []).map((event: any, i: number) => (
+          {visibleTimeline.map((event: any, i: number) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -10 }}
@@ -768,7 +901,7 @@ export default function ComplaintDetail() {
             >
               <div className="flex flex-col items-center">
                 <div className="w-2.5 h-2.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
-                {i < complaint.timeline.length - 1 && (
+                {i < visibleTimeline.length - 1 && (
                   <div className="w-0.5 flex-1 bg-slate-100 mt-1" />
                 )}
               </div>
@@ -851,15 +984,15 @@ export default function ComplaintDetail() {
             <h3 className="text-lg font-[700] text-slate-900 mb-2">
               Reassign Rejected Complaint
             </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              ID: {complaint.id}
-            </p>
+            <p className="text-xs text-slate-500 mb-4">ID: {complaint.id}</p>
             <div className="text-sm text-slate-700 mb-4 p-3 bg-pink-50 rounded-xl border border-pink-100">
               <strong>Category:</strong> {complaint.category}
               <br />
               <strong>Location:</strong> {complaint.address}
             </div>
-            <p className="text-xs text-slate-600 font-[600] mb-3">Select a manager to reassign:</p>
+            <p className="text-xs text-slate-600 font-[600] mb-3">
+              Select a manager to reassign:
+            </p>
             <div className="space-y-2 mb-5 max-h-64 overflow-y-auto">
               {MOCK_MANAGERS.map((mgr) => (
                 <label
@@ -897,25 +1030,29 @@ export default function ComplaintDetail() {
               <button
                 onClick={async () => {
                   if (!selectedReassignManager) return;
-                  
+
                   setIsReassigning(true);
                   try {
-                    const manager = MOCK_MANAGERS.find(m => m.id === selectedReassignManager);
+                    const manager = MOCK_MANAGERS.find(
+                      (m) => m.id === selectedReassignManager,
+                    );
                     if (!manager) {
                       toast.error("Manager not found");
                       return;
                     }
-                    
+
                     // Reassign complaint to new manager
                     await api.patch(`/api/complaints/${complaint.id}/assign`, {
                       managerId: selectedReassignManager,
                       managerName: manager.name,
                     });
-                    
+
                     // Refresh complaint data
-                    const updated = await appwriteService.getComplaintById(complaint.id);
+                    const updated = await appwriteService.getComplaintById(
+                      complaint.id,
+                    );
                     setComplaint(updated);
-                    
+
                     toast.success(`Complaint reassigned to ${manager.name}`);
                     setShowReassignModal(false);
                     setSelectedReassignManager("");

@@ -224,10 +224,8 @@ const features = [
   },
   {
     icon: Award,
-    title: "Regional Leaderboards",
-    desc: "Citizens earn points and climb state-level leaderboards by reporting genuine issues and verifying others' solutions. Civic credits represent your contribution to Delhi and UP.",
-    color: "text-orange-500",
-    bg: "bg-orange-50",
+    title: "Citizen Leaderboards",
+    desc: "Earn reputation and climb the city-wide leaderboard by reporting genuine issues and verifying solutions. Civic credits represent your contribution to making Delhi better.",
   },
 ];
 
@@ -252,21 +250,21 @@ const steps = [
 const testimonials = [
   {
     name: "Anjali Desai",
-    area: "New Delhi, NCR",
+    area: "Delhi, NCT",
     text: "I reported a garbage overflow and it was cleared in 8 hours. The before/after card was amazing — I could track the progress live!",
     rating: 5,
     badge: "🔎 Verified Contributor",
   },
   {
     name: "Rajesh Kumar",
-    area: "Lucknow, UP",
+    area: "Dwarka, Delhi",
     text: "Finally a platform where our complaints actually get tracked and resolved. The SLA countdown keeps officials accountable.",
     rating: 5,
     badge: "🛠️ Problem Solver",
   },
   {
     name: "Priya Nair",
-    area: "Noida, UP",
+    area: "Rohini, Delhi",
     text: "The AI category suggestion is spot on. I just pointed my phone at the pothole and it knew exactly what it was. Super fast reporting.",
     rating: 5,
     badge: "🌱 First Reporter",
@@ -451,30 +449,22 @@ export default function LandingPage() {
         </div>
       ),
     },
-    "Civic Impact": {
-      title: "Regional Coverage Report",
+      "Impact Strip": {
+      title: "Delhi Governance Report",
       icon: BarChart3,
-      desc: "Precision governance across jurisdictions.",
+      desc: "Precision governance across Delhi NCT.",
       content: (
         <div className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">NCR</p>
+              <p className="text-2xl font-bold text-blue-600">NCT of Delhi</p>
               <p className="text-[10px] text-blue-500 uppercase font-semibold">
-                Strategic Focus
-              </p>
-            </div>
-            <div className="p-3 bg-emerald-50 rounded-lg">
-              <p className="text-2xl font-bold text-emerald-600">UP</p>
-              <p className="text-[10px] text-emerald-500 uppercase font-semibold">
-                State Coverage
+                Primary Jurisdiction
               </p>
             </div>
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
-            CivicPulse prototype is specifically optimized for regional urban
-            centers and inter-state corridors, ensuring 100% GPS-verified
-            resolution trails.
+            CivicPulse Delhi is specifically optimized for the National Capital Territory, ensuring 100% GPS-verified resolution trails for all civic complaints.
           </p>
         </div>
       ),
@@ -725,7 +715,7 @@ export default function LandingPage() {
               {[
                 { value: "8", label: "Categories" },
                 { value: "SLA", label: "Enforced" },
-                { value: "Delhi/UP", label: "Precise Coverage" },
+                { value: "Precision", label: "Mapping" },
                 { value: "GPS", label: "Verification" },
               ].map((s) => (
                 <div key={s.label}>
@@ -755,10 +745,10 @@ export default function LandingPage() {
           {Array(4)
             .fill([
               "🚀 Delhi NCR resolved 1,240 complaints this month",
-              "⚡ AI prioritized 42 new issues in Lucknow",
-              "🛠️ Pothole on Noida Expressway fixed in 14 hours",
-              "🔍 94% SLA compliance across UP districts",
-              "🏆 Top Contributor: Delhi-West Division",
+              "⚡ AI prioritized 42 critical issues in Central Delhi",
+              "🛠️ Pothole on Ring Road fixed in 14 hours",
+              "🔍 94% SLA compliance across all Delhi wards",
+              "🏆 Top Ward: Delhi-West Division",
             ])
             .flat()
             .map((text, i) => (
@@ -780,12 +770,11 @@ export default function LandingPage() {
               <MapPin className="w-3 h-3" />8 Issue Categories
             </div>
             <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-4">
-              Regional Jurisdiction Platform
+              NCT of Delhi Jurisdiction
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Solving civic issues across the National Capital Region and Uttar
-              Pradesh. Our system handles jurisdiction-aware routing for faster
-              fixes.
+              Solving civic issues across the National Capital Territory. Our
+              system handles jurisdiction-aware routing for faster fixes.
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
@@ -906,17 +895,17 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center gap-2 bg-violet-50 text-violet-600 text-xs font-[700] px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider">
                 <BarChart3 className="w-3 h-3" />
-                For Delhi & UP Authorities
+                For Delhi Government Authorities
               </div>
               <h2 className="text-3xl md:text-4xl font-[800] text-slate-900 mb-6">
-                Inter-State Visibility.
+                City-Wide Visibility.
                 <br />
-                <span className="text-blue-600">Unified Governance.</span>
+                <span className="text-blue-600">Smart Governance.</span>
               </h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Nodal officers in Delhi and UP get a real-time complaint queue,
-                state-specific SLA tracking, and heatmaps for the National
-                Capital Region and Uttar Pradesh.
+                Nodal officers in the Delhi Government get a real-time
+                complaint queue, ward-specific SLA tracking, and heatmaps for the
+                National Capital Territory.
               </p>
               <div className="space-y-4">
                 {[
@@ -1045,9 +1034,9 @@ export default function LandingPage() {
                 icon: TrendingUp,
               },
               {
-                value: 2,
-                suffix: " States",
-                label: "Delhi & UP Coverage",
+                value: 1,
+                suffix: " City",
+                label: "Delhi NCT Coverage",
                 icon: MapPin,
               },
             ].map(({ value, suffix, label, icon: Icon }) => (
@@ -1130,9 +1119,9 @@ export default function LandingPage() {
                 Community-Led Civic Governance
               </h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Our prototype demonstrates how citizens can verify nearby issues
-                to boost priority and credibility. Delhi and UP residents can
-                now visualize a better jurisdiction together.
+                Our platform demonstrates how citizens can verify nearby issues
+                to boost priority and credibility. Residents of Delhi can
+                now visualize a better city together.
               </p>
               <div className="space-y-4 mb-8">
                 {[
@@ -1253,12 +1242,12 @@ export default function LandingPage() {
           >
             <div className="text-5xl mb-6">🏙️</div>
             <h2 className="text-4xl md:text-5xl font-[800] text-white mb-6">
-              Ready to Make Your City Better?
+              Ready to Make Delhi Better?
             </h2>
             <p className="text-slate-300 text-lg mb-10 max-w-2xl mx-auto">
-              Experience the prototype of CivicPulse — a platform designed to
-              report issues, earn credits, and hold authorities accountable
-              across Delhi and UP.
+              Experience CivicPulse — a platform designed to report issues,
+              earn credits, and hold authorities accountable across the NCT of
+              Delhi.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -1394,7 +1383,7 @@ export default function LandingPage() {
           </div>
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-600">
-              © 2026 CivicPulse. Built for the Hackathon. PS-CRM v2.0
+              © 2026 CivicPulse Delhi. All rights reserved.
             </p>
             <div className="flex gap-4 text-xs text-slate-600">
               <button

@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 # Geocoder for reverse-geocoding state from coordinates
 geolocator = Nominatim(user_agent="smart_crm_ps_crm")
 
-# ── Manager Config (mirrors frontend mockData.ts) ─────────────────────────────
+# ── Delhi Specific Manager Config ─────────────────────────────
 
 MOCK_MANAGERS = [
     # Delhi (5 managers)
@@ -22,17 +22,6 @@ MOCK_MANAGERS = [
     {"id": "MGR-DEL-03", "name": "Rajesh Tyagi",   "state": "Delhi"},
     {"id": "MGR-DEL-04", "name": "Anita Singh",    "state": "Delhi"},
     {"id": "MGR-DEL-05", "name": "Amit Goel",      "state": "Delhi"},
-    # Uttar Pradesh (10 managers)
-    {"id": "MGR-UP-01",  "name": "Yash Pal",       "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-02",  "name": "Priti Yadav",    "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-03",  "name": "Manoj Mishra",   "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-04",  "name": "Renu Devi",      "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-05",  "name": "Suresh Chandra", "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-06",  "name": "Kiran Singh",    "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-07",  "name": "Deepak Rawat",   "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-08",  "name": "Alka Jha",       "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-09",  "name": "Vikrant Tomar",  "state": "Uttar Pradesh"},
-    {"id": "MGR-UP-10",  "name": "Sudhir Maurya",  "state": "Uttar Pradesh"},
 ]
 
 
@@ -74,14 +63,6 @@ _STATE_ALIASES: dict[str, str] = {
     # Delhi / NCT
     "IN-DL": "Delhi", "nct of delhi": "Delhi", "delhi": "Delhi",
     "new delhi": "Delhi",
-    # Uttar Pradesh
-    "IN-UP": "Uttar Pradesh", "uttar pradesh": "Uttar Pradesh",
-    "lucknow": "Uttar Pradesh", "kanpur": "Uttar Pradesh",
-    "noida": "Uttar Pradesh", "ghaziabad": "Uttar Pradesh",
-    "agra": "Uttar Pradesh", "varanasi": "Uttar Pradesh",
-    "meerut": "Uttar Pradesh", "prayagraj": "Uttar Pradesh",
-    "allahabad": "Uttar Pradesh", "bareilly": "Uttar Pradesh",
-    "gorakhpur": "Uttar Pradesh",
 }
 
 def _resolve_state_from_address(addr: dict) -> str:
@@ -205,11 +186,16 @@ class StatusUpdate(BaseModel):
     note: Optional[str] = ""
     actor: Optional[str] = "System"
     assignedTo: Optional[str] = None
+    photoUrl: Optional[str] = None
 
 
 class AssignManager(BaseModel):
     managerId: str
     managerName: Optional[str] = ""
+
+
+class ShareCardUpdate(BaseModel):
+    photoUrl: str
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -362,6 +348,9 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if body.assignedTo:
             update_payload["assignedTo"] = body.assignedTo
         
+        if body.photoUrl:
+            update_payload["photoUrl"] = body.photoUrl
+        
         databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, update_payload)
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
         return _map_doc(updated)
@@ -369,6 +358,25 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         raise
     except Exception as e:
         print(f"STATUS_UPDATE_ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{complaint_id}/share-card")
+async def update_share_card(complaint_id: str, body: ShareCardUpdate):
+    try:
+        if not body.photoUrl:
+            raise HTTPException(status_code=400, detail="photoUrl is required")
+
+        databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, {
+            "photoUrl": body.photoUrl,
+            "updatedAt": datetime.now(UTC).isoformat(),
+        })
+        updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
+        return _map_doc(updated)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"SHARE_CARD_UPDATE_ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
