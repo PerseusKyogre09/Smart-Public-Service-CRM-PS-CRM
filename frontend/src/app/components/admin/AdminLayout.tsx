@@ -13,6 +13,7 @@ import {
   ChevronRight,
   AlertTriangle,
 } from "lucide-react";
+import AdminAIAssistant from "./AdminAIAssistant";
 
 const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Overview", end: true },
@@ -185,6 +186,8 @@ export default function AdminLayout() {
         <main className="flex-1 overflow-auto bg-white/8 p-4 backdrop-blur-[16px] lg:p-8">
           <Outlet />
         </main>
+
+        <AdminAIAssistant />
       </div>
     </div>
   );

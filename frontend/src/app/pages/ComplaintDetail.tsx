@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
@@ -54,6 +54,7 @@ const statusSteps = [
 export default function ComplaintDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [complaint, setComplaint] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -119,6 +120,10 @@ export default function ComplaintDetail() {
 
   const isManager =
     currentUser && sessionStorage.getItem("managerData") !== null;
+
+  const backToListPath = location.pathname.startsWith("/admin/")
+    ? "/admin/queue"
+    : "/dashboard/complaints";
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(complaint.id);
@@ -432,7 +437,7 @@ export default function ComplaintDetail() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate("/dashboard/complaints")}
+          onClick={() => navigate(backToListPath)}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

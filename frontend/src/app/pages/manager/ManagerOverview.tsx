@@ -50,9 +50,10 @@ export default function ManagerOverview() {
       .get()
       .then((user) => {
         // Find the mock config for this logged in user or use defaults
-        const mockConfig = mockManagers.find(
-          (m: Manager) => m.email === user.email,
-        ) || (managerId ? mockManagers.find((m) => m.id === managerId) : null) || mockManagers[0];
+        const mockConfig =
+          mockManagers.find((m: Manager) => m.email === user.email) ||
+          (managerId ? mockManagers.find((m) => m.id === managerId) : null) ||
+          mockManagers[0];
         setManager({
           ...user,
           // Use the mock manager ID (e.g. MGR-DEL-01) for complaint filtering
@@ -83,12 +84,12 @@ export default function ManagerOverview() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null,
   );
-  const [selectedReview, setSelectedReview] = useState<Complaint | null>(
-    null,
-  );
+  const [selectedReview, setSelectedReview] = useState<Complaint | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
+  const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(
+    null,
+  );
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMapView, setShowMapView] = useState(false);
@@ -120,7 +121,10 @@ export default function ManagerOverview() {
     const total = complaints.length;
     const submitted = complaints.filter((c) => c.status === "Submitted").length;
     const assigned = complaints.filter(
-      (c) => c.status === "Assigned" || c.status === "In Progress" || c.status === "Pending Review",
+      (c) =>
+        c.status === "Assigned" ||
+        c.status === "In Progress" ||
+        c.status === "Pending Review",
     ).length;
     const resolved = complaints.filter(
       (c) => c.status === "Resolved" || c.status === "Closed",
@@ -145,7 +149,7 @@ export default function ManagerOverview() {
   // Auto-assignment logic - smart worker selection
   const autoAssignWorker = (complaint: Complaint): Worker | null => {
     const availableWorkers = stateWorkers.filter(
-      (w: Worker) => w.status === "Available"
+      (w: Worker) => w.status === "Available",
     );
 
     if (availableWorkers.length === 0) return null;
@@ -158,7 +162,7 @@ export default function ManagerOverview() {
   // Auto-assign all submitted complaints
   const handleAutoAssignAll = async () => {
     const submittedComplaints = complaints.filter(
-      (c) => c.status === "Submitted"
+      (c) => c.status === "Submitted",
     );
 
     if (submittedComplaints.length === 0) {
@@ -267,7 +271,7 @@ export default function ManagerOverview() {
             c.id === selectedReview.id ? { ...c, status: newStatus } : c,
           ),
         );
-        
+
         if (action === "approve") {
           setShowReviewModal(false);
           setSelectedReview(null);
@@ -278,7 +282,7 @@ export default function ManagerOverview() {
           setShowReviewModal(false);
           setShowReassignModal(true);
         }
-        
+
         toast.success(message);
       })
       .catch(() => {
@@ -288,7 +292,7 @@ export default function ManagerOverview() {
             c.id === selectedReview.id ? { ...c, status: newStatus } : c,
           ),
         );
-        
+
         if (action === "approve") {
           setShowReviewModal(false);
           setSelectedReview(null);
@@ -299,7 +303,7 @@ export default function ManagerOverview() {
           setShowReviewModal(false);
           setShowReassignModal(true);
         }
-        
+
         toast.success(message);
       });
   };
@@ -446,7 +450,8 @@ export default function ManagerOverview() {
               disabled={autoAssigning}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-600/20 disabled:opacity-50 flex-shrink-0 whitespace-nowrap"
             >
-              <Zap size={18} /> {autoAssigning ? "Assigning..." : "Auto Assign All"}
+              <Zap size={18} />{" "}
+              {autoAssigning ? "Assigning..." : "Auto Assign All"}
             </button>
           </div>
         </motion.div>
@@ -540,7 +545,8 @@ export default function ManagerOverview() {
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-[2.5rem] p-8">
           <h2 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
             <AlertCircle size={20} className="text-purple-600" />
-            Work Pending Review ({complaints.filter((c) => c.status === "Pending Review").length})
+            Work Pending Review (
+            {complaints.filter((c) => c.status === "Pending Review").length})
           </h2>
           <div className="grid gap-4 md:grid-cols-2">
             {complaints
@@ -618,7 +624,12 @@ export default function ManagerOverview() {
 
           <div className="space-y-4">
             {filteredComplaints
-              .filter((c) => c.status !== "Resolved" && c.status !== "Pending Review" && c.status !== "Closed")
+              .filter(
+                (c) =>
+                  c.status !== "Resolved" &&
+                  c.status !== "Pending Review" &&
+                  c.status !== "Closed",
+              )
               .map((complaint) => (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -847,7 +858,10 @@ export default function ManagerOverview() {
                 Review Work Submission
               </h3>
               <p className="text-sm text-slate-500 mb-6">
-                Submitted by: <span className="font-semibold text-slate-900">{selectedReview.assignedTo}</span>
+                Submitted by:{" "}
+                <span className="font-semibold text-slate-900">
+                  {selectedReview.assignedTo}
+                </span>
               </p>
 
               <div className="bg-slate-50 rounded-2xl p-6 mb-6 border border-slate-100">
@@ -864,7 +878,9 @@ export default function ManagerOverview() {
                   <p className="text-xs font-bold text-slate-500 uppercase mb-2">
                     Issue
                   </p>
-                  <p className="text-sm text-slate-700">{selectedReview.description}</p>
+                  <p className="text-sm text-slate-700">
+                    {selectedReview.description}
+                  </p>
                 </div>
 
                 <div>
@@ -872,7 +888,11 @@ export default function ManagerOverview() {
                     Work Submitted
                   </p>
                   <p className="text-sm text-slate-700 italic">
-                    "{selectedReview.timeline?.[selectedReview.timeline.length - 1]?.note || 'Work completed and submitted for review'}"
+                    "
+                    {selectedReview.timeline?.[
+                      selectedReview.timeline.length - 1
+                    ]?.note || "Work completed and submitted for review"}
+                    "
                   </p>
                 </div>
               </div>
@@ -919,7 +939,9 @@ export default function ManagerOverview() {
                     }`}
                   >
                     <Check size={18} />
-                    {reviewAction === "approve" ? "Confirm Approval" : "Confirm Rejection"}
+                    {reviewAction === "approve"
+                      ? "Confirm Approval"
+                      : "Confirm Rejection"}
                   </button>
                   <button
                     onClick={() => setReviewAction(null)}
@@ -955,7 +977,8 @@ export default function ManagerOverview() {
                 Assign New Worker
               </h3>
               <p className="text-sm text-slate-600 mb-6">
-                Ticket rejected from {selectedReview.assignedTo}. Select a different worker to reassign.
+                Ticket rejected from {selectedReview.assignedTo}. Select a
+                different worker to reassign.
               </p>
 
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-6">

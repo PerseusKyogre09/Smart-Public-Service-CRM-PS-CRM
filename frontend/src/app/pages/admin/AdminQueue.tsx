@@ -168,18 +168,39 @@ export default function AdminQueue() {
             onClick={async () => {
               try {
                 setIsExporting(true);
-                // Export as PDF
+                const breachedCount = filtered.filter(
+                  (c) => c.slaRemainingHours < 0
+                ).length;
+                const atRiskCount = filtered.filter(
+                  (c) => c.slaRemainingHours >= 0 && c.slaRemainingHours < 12
+                ).length;
+                const onTrackCount = filtered.filter(
+                  (c) => c.slaRemainingHours >= 12
+                ).length;
+
                 const columns = [
-                  { label: "ID", key: "id" },
+                  { label: "Complaint ID", key: "id" },
                   { label: "Category", key: "category" },
-                  { label: "Area", key: "area" },
-                  { label: "Status", key: "status" },
-                  { label: "Priority", key: "priorityScore" },
-                  { label: "SLA Hours Left", key: "slaRemainingHours" },
-                  { label: "Created At", key: "createdAt" },
+                  { label: "Area/Zone", key: "area" },
+                  { label: "Current Status", key: "status" },
+                  { label: "Priority", key: "priority" },
+                  { label: "SLA", key: "slaStatus" },
+                  { label: "Created On", key: "createdAt" },
                 ];
                 const displayData = filtered.map((c) => ({
                   ...c,
+                  priority:
+                    c.priorityScore >= 0.75
+                      ? "High"
+                      : c.priorityScore >= 0.4
+                        ? "Medium"
+                        : "Low",
+                  slaStatus:
+                    c.slaRemainingHours < 0
+                      ? `Breached by ${Math.abs(c.slaRemainingHours)}h`
+                      : c.slaRemainingHours < 12
+                        ? `At Risk (${c.slaRemainingHours}h left)`
+                        : `On Track (${c.slaRemainingHours}h left)`,
                   createdAt: new Date(c.createdAt).toLocaleDateString(),
                 }));
 
@@ -188,6 +209,30 @@ export default function AdminQueue() {
                   columns,
                   "complaint-queue",
                   "Complaint Queue Report",
+                  {
+                    subtitle: "Operational snapshot for complaint monitoring and SLA tracking",
+                    generatedBy: "Admin Portal",
+                    logoPath: "/logo.svg",
+                    filters: [
+                      `Search: ${search || "None"}`,
+                      `SLA: ${filterSLA}`,
+                      `Category: ${filterCategory}`,
+                      `Ward: ${filterWard}`,
+                    ],
+                    summary: [
+                      { label: "Total Shown", value: filtered.length },
+                      { label: "Breached", value: breachedCount },
+                      { label: "At Risk", value: atRiskCount },
+                      { label: "On Track", value: onTrackCount },
+                      {
+                        label: "Escalated",
+                        value: filtered.filter((c) => c.escalated).length,
+                      },
+                    ],
+                    footerSignature: "Prepared for CivicPulse Admin",
+                    footerNote: "Digitally generated complaint queue report",
+                    maxCellChars: 36,
+                  }
                 );
                 toast.success("Export completed successfully");
               } catch (error) {
@@ -279,7 +324,6 @@ export default function AdminQueue() {
           <div className="hidden md:block w-24">Category</div>
           <div className="hidden lg:block w-28">Priority</div>
           <div className="hidden md:block w-28">SLA Status</div>
-          <div className="hidden lg:block w-32">Assigned To</div>
           <div className="w-24">Status</div>
           <div className="w-8"></div>
         </div>
@@ -316,7 +360,7 @@ export default function AdminQueue() {
 
                   <div
                     className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => navigate(`/dashboard/complaints/${c.id}`)}
+                    onClick={() => navigate(`/admin/queue/${c.id}`)}
                   >
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-[700] text-slate-800">
@@ -366,33 +410,6 @@ export default function AdminQueue() {
                           ? `${Math.abs(c.slaRemainingHours)}h over`
                           : `${c.slaRemainingHours}h left`}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="hidden lg:block w-32">
-                    {c.assignedTo ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-[700]">
-                          {c.assignedTo
-                            .split(" ")
-                            .slice(-2)
-                            .map((n) => n[0])
-                            .join("")}
-                        </div>
-                        <span className="text-xs text-slate-600 truncate">
-                          {c.assignedTo.split(" ").slice(-1)[0]}
-                        </span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setSelectedIds([c.id]);
-                          setAssignModalOpen(true);
-                        }}
-                        className="text-xs text-violet-600 hover:text-violet-700 font-[600] underline underline-offset-2"
-                      >
-                        Assign now
-                      </button>
                     )}
                   </div>
 

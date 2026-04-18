@@ -83,6 +83,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: AdminOverview },
           { path: "queue", Component: AdminQueue },
+          { path: "queue/:id", Component: ComplaintDetail },
           { path: "analytics", Component: AdminAnalytics },
           { path: "sla", Component: AdminSLA },
           { path: "users", Component: AdminUsers },

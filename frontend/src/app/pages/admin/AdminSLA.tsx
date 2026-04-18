@@ -24,12 +24,6 @@ export default function AdminSLA() {
     ));
   };
 
-  const escalationChain = [
-    { level: "Level 1", actor: "Field Officer", trigger: "At SLA deadline (T-0)", action: "Push + SMS notification" },
-    { level: "Level 2", actor: "Department Admin", trigger: "T+2 hours after breach", action: "Push + Email notification" },
-    { level: "Level 3", actor: "City Admin", trigger: "T+4 hours after breach", action: "Push + Email + SMS notification" },
-  ];
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -175,33 +169,6 @@ export default function AdminSLA() {
         </div>
       </div>
 
-      {/* Escalation Chain */}
-      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-5">
-        <h3 className="text-base font-[700] text-slate-900 mb-5">Escalation Chain</h3>
-        <div className="space-y-4">
-          {escalationChain.map((e, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-[700] ${
-                  i === 0 ? "bg-amber-500" : i === 1 ? "bg-orange-500" : "bg-red-500"
-                }`}>{i + 1}</div>
-                {i < escalationChain.length - 1 && <div className="w-0.5 flex-1 bg-slate-100 mt-1" />}
-              </div>
-              <div className="flex-1 pb-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-sm font-[700] text-slate-900">{e.level} — {e.actor}</span>
-                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-[500]">{e.trigger}</span>
-                </div>
-                <div className="text-xs text-slate-500 mt-1">{e.action}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-slate-400 mt-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
-          💡 SLA countdown is monitored continuously. T-24h reminder is sent before deadline. Auto-escalation triggers at T-0.
-          Citizens can manually escalate from the complaint detail screen when SLA is breached.
-        </p>
-      </div>
     </div>
   );
 }
