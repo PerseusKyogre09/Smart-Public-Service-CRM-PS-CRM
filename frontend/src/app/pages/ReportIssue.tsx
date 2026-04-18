@@ -17,38 +17,40 @@ import {
   Lightbulb,
   Plus,
   UserCheck,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toPng } from "html-to-image";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
 
-// Mirrors backend MOCK_MANAGERS — used for live preview only
-const MANAGER_STATE_MAP: { keywords: string[]; state: string; managers: { id: string; name: string }[] }[] = [
+// Delhi Specific Manager Mapping
+const MANAGER_STATE_MAP: {
+  keywords: string[];
+  state: string;
+  managers: { id: string; name: string }[];
+}[] = [
   {
     state: "Delhi",
-    keywords: ["delhi", "new delhi", "nd", "ndmc", "delhite"],
+    keywords: [
+      "delhi",
+      "new delhi",
+      "nd",
+      "ndmc",
+      "delhite",
+      "dwarka",
+      "rohini",
+      "saket",
+      "laxmi nagar",
+      "karol bagh",
+      "janakpuri",
+    ],
     managers: [
       { id: "MGR-DEL-01", name: "Sanjay Sharma" },
       { id: "MGR-DEL-02", name: "Meena Kumari" },
       { id: "MGR-DEL-03", name: "Rajesh Tyagi" },
       { id: "MGR-DEL-04", name: "Anita Singh" },
       { id: "MGR-DEL-05", name: "Amit Goel" },
-    ],
-  },
-  {
-    state: "Uttar Pradesh",
-    keywords: ["uttar pradesh", "up", "lucknow", "kanpur", "varanasi", "agra", "meerut", "noida", "ghaziabad", "prayagraj", "allahabad", "bareilly", "gorakhpur"],
-    managers: [
-      { id: "MGR-UP-01", name: "Yash Pal" },
-      { id: "MGR-UP-02", name: "Priti Yadav" },
-      { id: "MGR-UP-03", name: "Manoj Mishra" },
-      { id: "MGR-UP-04", name: "Renu Devi" },
-      { id: "MGR-UP-05", name: "Suresh Chandra" },
-      { id: "MGR-UP-06", name: "Kiran Singh" },
-      { id: "MGR-UP-07", name: "Deepak Rawat" },
-      { id: "MGR-UP-08", name: "Alka Jha" },
-      { id: "MGR-UP-09", name: "Vikrant Tomar" },
-      { id: "MGR-UP-10", name: "Sudhir Maurya" },
     ],
   },
 ];
@@ -73,24 +75,45 @@ const categories = [
 ];
 
 const subcategories: Record<string, string[]> = {
-  Pothole: ["Road", "Footpath", "Bridge", "Parking Area"],
-  Garbage: ["Overflow", "Illegal Dumping", "Litter", "Dead Animal"],
-  Streetlight: ["Main Road", "Residential Lane", "Underpass", "Park"],
-  Water: ["Supply Failure", "Pipe Burst", "Contamination", "Low Pressure"],
+  Pothole: ["Road", "Footpath", "Bridge", "Parking Area", "Other"],
+  Garbage: ["Overflow", "Illegal Dumping", "Litter", "Dead Animal", "Other"],
+  Streetlight: ["Main Road", "Residential Lane", "Underpass", "Park", "Other"],
+  Water: [
+    "Supply Failure",
+    "Pipe Burst",
+    "Contamination",
+    "Low Pressure",
+    "Other",
+  ],
   Sanitation: [
     "Drainage Clog",
     "Sewage Overflow",
     "Public Toilet",
     "Manhole Issue",
+    "Other",
   ],
-  Construction: ["Illegal Building", "Road Damage", "Encroachment", "Debris"],
-  Safety: ["Exposed Wires", "Tree Fall Risk", "Broken Barrier", "Open Manhole"],
-  Other: ["Noise", "Animal Menace", "Illegal Parking", "General"],
+  Construction: [
+    "Illegal Building",
+    "Road Damage",
+    "Encroachment",
+    "Debris",
+    "Other",
+  ],
+  Safety: [
+    "Exposed Wires",
+    "Tree Fall Risk",
+    "Broken Barrier",
+    "Open Manhole",
+    "Other",
+  ],
+  Other: ["Noise", "Animal Menace", "Illegal Parking", "General", "Other"],
 };
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
-function getManagerPreview(text: string): { state: string; manager: { id: string; name: string } } | null {
+function getManagerPreview(
+  text: string,
+): { state: string; manager: { id: string; name: string } } | null {
   const lower = text.toLowerCase();
   for (const group of MANAGER_STATE_MAP) {
     if (group.keywords.some((kw) => lower.includes(kw))) {
@@ -124,6 +147,8 @@ export default function ReportIssue() {
   const [complaintId, setComplaintId] = useState("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [assignedManagerName, setAssignedManagerName] = useState("");
+  const [isGeneratingCard, setIsGeneratingCard] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   // Live manager preview — recomputed whenever address/area text changes
   const managerPreview = useMemo(
@@ -135,13 +160,130 @@ export default function ReportIssue() {
   const mapRef = useRef<any>(null);
   const mapInstanceRef = useRef<any>(null);
 
+  // Hidden Card Template for Image Generation — Renders as soon as we have enough data
+  const ReportCardTemplate = () => (
+    <div className="fixed -left-[2000px] top-0">
+      <div
+        ref={reportRef}
+        className="w-[800px] bg-white p-12 rounded-[3rem] border-[12px] border-orange-100 shadow-2xl relative overflow-hidden"
+        style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -ml-32 -mb-32" />
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-12 border-b border-slate-100 pb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-orange-500 rounded-[1.5rem] flex items-center justify-center shadow-lg">
+                <CheckCircle2 className="w-10 h-10 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                  CivicPulse
+                </h1>
+                <p className="text-emerald-700 font-bold uppercase tracking-widest text-xs">
+                  Official Issue Report
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Report ID
+              </span>
+              <p className="text-xl font-bold text-slate-900 leading-tight">
+                #{complaintId || "PENDING"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 mb-12">
+            <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm border border-slate-50">
+                {selectedCategory === "Garbage"
+                  ? "🗑️"
+                  : selectedCategory === "Streetlight"
+                    ? "💡"
+                    : selectedCategory === "Pothole"
+                      ? "🔧"
+                      : selectedCategory === "Water"
+                        ? "💧"
+                        : "📍"}
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Issue Type
+                </p>
+                <p className="text-xl font-black text-slate-800">
+                  {selectedCategory || "Other"}
+                </p>
+              </div>
+            </div>
+            <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-50">
+                <MapPin className="w-8 h-8 text-orange-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Status
+                </p>
+                <p className="text-xl font-black text-emerald-700">Submitted</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem]">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                Report Description
+              </p>
+              <p className="text-2xl font-bold text-slate-900 leading-relaxed italic">
+                "{description || "No description provided"}"
+              </p>
+            </div>
+
+            <div className="flex items-start gap-5 p-6 border-l-4 border-orange-500 bg-orange-50/60 rounded-r-[2rem]">
+              <MapPin className="w-8 h-8 text-orange-600 mt-1 shrink-0" />
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Full Location
+                </p>
+                <p className="text-xl font-bold text-slate-800">
+                  {`${address}${area ? `, ${area}` : ""}${pincode ? ` - ${pincode}` : ""}` ||
+                    "Location unavailable"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-16 pt-8 border-t border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <p className="text-sm font-bold text-slate-500">
+                Validated on{" "}
+                <span className="text-slate-900 font-black">
+                  {new Date().toLocaleDateString()}
+                </span>{" "}
+                via CivicPulse Network
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                Scanned via Web App
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Geofence boundaries for allowed service area (Delhi-NCR + Uttar Pradesh)
   // Excludes Bihar and other states
   const GEOFENCE_BOUNDS = {
-    minLat: 26.5,  // South boundary (exclude Bihar)
-    maxLat: 31.0,  // North boundary (include UP)
-    minLng: 76.5,  // West boundary
-    maxLng: 80.5,  // East boundary (include UP)
+    minLat: 26.5, // South boundary (exclude Bihar)
+    maxLat: 31.0, // North boundary (include UP)
+    minLng: 76.5, // West boundary
+    maxLng: 80.5, // East boundary (include UP)
   };
 
   const isLocationAllowed = (lat: number, lng: number): boolean => {
@@ -151,7 +293,7 @@ export default function ReportIssue() {
 
   const getLocationErrorMessage = (lat: number, lng: number): string => {
     const { minLat, maxLat, minLng, maxLng } = GEOFENCE_BOUNDS;
-    
+
     if (lat < minLat) {
       return "❌ This location is outside our service area (too far south - possibly Bihar). Please select a location within Delhi-NCR or Uttar Pradesh.";
     }
@@ -242,7 +384,7 @@ export default function ReportIssue() {
   // Geocode typed location and determine manager based on actual coordinates
   useEffect(() => {
     const searchText = `${address}${area ? `, ${area}` : ""}`.trim();
-    
+
     // Only geocode if we have meaningful text and NO coordinates yet (not from map/GPS)
     if (searchText.length < 5 || coords) return;
 
@@ -257,22 +399,25 @@ export default function ReportIssue() {
           const result = data[0];
           const lat = parseFloat(result.lat);
           const lng = parseFloat(result.lng);
-          
+
           // Get state from coordinates using backend's logic
           try {
             const stateResponse = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
             );
             const stateData = await stateResponse.json();
-            
+
             if (stateData && stateData.address) {
               const addr = stateData.address;
               // Extract state/province from response
-              const state = addr.state || 
-                          (addr.address.includes("Delhi") ? "Delhi" : 
-                           addr.address.includes("Uttar Pradesh") ? "Uttar Pradesh" : 
-                           "Unknown");
-              
+              const state =
+                addr.state ||
+                (addr.address.includes("Delhi")
+                  ? "Delhi"
+                  : addr.address.includes("Uttar Pradesh")
+                    ? "Uttar Pradesh"
+                    : "Unknown");
+
               // Show manager preview based on detected state
               const preview = getManagerPreview(state);
               if (preview) {
@@ -388,7 +533,7 @@ export default function ReportIssue() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         // Validate location is within allowed service area
         if (!isLocationAllowed(latitude, longitude)) {
           toast.error(getLocationErrorMessage(latitude, longitude));
@@ -493,11 +638,7 @@ export default function ReportIssue() {
         setAddress(locationName);
 
         const areaName =
-          addr.suburb ||
-          addr.village ||
-          addr.town ||
-          addr.city ||
-          addr.county;
+          addr.suburb || addr.village || addr.town || addr.city || addr.county;
 
         if (areaName) setArea(areaName);
 
@@ -532,11 +673,11 @@ export default function ReportIssue() {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
-        
+
         // Validate location is within allowed bounds before proceeding
         if (!isLocationAllowed(lat, lng)) {
           toast.error(
-            `"${result.display_name}" is outside our service area. Please search for a location in Delhi-NCR or Uttar Pradesh.`
+            `"${result.display_name}" is outside our service area. Please search for a location in Delhi-NCR or Uttar Pradesh.`,
           );
           return;
         }
@@ -547,12 +688,14 @@ export default function ReportIssue() {
         toast.success(`Found: ${result.display_name}`);
       } else {
         toast.error(
-          "Location not found in our service area. Try searching for a specific address, landmark, or city (Delhi, Noida, Lucknow, etc.)"
+          "Location not found in our service area. Try searching for a specific address, landmark, or city (Delhi, Noida, Lucknow, etc.)",
         );
       }
     } catch (error) {
       console.error("Search failed:", error);
-      toast.error("Search failed. Please try again or click on the map instead.");
+      toast.error(
+        "Search failed. Please try again or click on the map instead.",
+      );
     }
   };
 
@@ -562,7 +705,7 @@ export default function ReportIssue() {
 
     try {
       const user = await account.get();
-      
+
       // If no coordinates yet, geocode the typed location
       let finalCoords = coords;
       if (!finalCoords && address) {
@@ -587,7 +730,7 @@ export default function ReportIssue() {
       // Validate the location (either from user selection or auto-geocoding)
       if (finalCoords && !isLocationAllowed(finalCoords.lat, finalCoords.lng)) {
         toast.error(
-          `The location "${address || area}" is outside our service area. Please select a location within Delhi-NCR or Uttar Pradesh.`
+          `The location "${address || area}" is outside our service area. Please select a location within Delhi-NCR or Uttar Pradesh.`,
         );
         setIsSubmitting(false);
         return;
@@ -598,24 +741,72 @@ export default function ReportIssue() {
         subcategory: selectedSubcategory || "",
         description: description.trim() || "No description provided",
         address: `${address}${area ? `, ${area}` : ""}${pincode ? ` - ${pincode}` : ""}`,
-        coordinates: finalCoords ? { lat: finalCoords.lat, lng: finalCoords.lng } : null,
+        coordinates: finalCoords
+          ? { lat: finalCoords.lat, lng: finalCoords.lng }
+          : null,
         photos: uploadedPhotos,
         ward: area || "General",
         reporterName: user.name || "Anonymous",
         reporterId: user.$id || "anon",
         // Only send frontend manager if NO coordinates available (backend has better geolocation from coords)
-        assignedManagerName: finalCoords ? null : (assignedManagerName || managerPreview?.manager.name || null),
-        assignedManagerState: finalCoords ? null : (managerPreview?.state || null),
+        assignedManagerName: finalCoords
+          ? null
+          : assignedManagerName || managerPreview?.manager.name || null,
+        assignedManagerState: finalCoords
+          ? null
+          : managerPreview?.state || null,
       };
 
       const result = await appwriteService.createComplaint(payload as any);
       // result may be a string (id) or object {id, assignedManager}
       const newId = typeof result === "string" ? result : (result as any).id;
-      const mgr = typeof result === "object" ? (result as any).assignedManager : (assignedManagerName || managerPreview?.manager.name || "");
+      const mgr =
+        typeof result === "object"
+          ? (result as any).assignedManager
+          : assignedManagerName || managerPreview?.manager.name || "";
       setComplaintId(newId);
       setAssignedManagerName(mgr);
       setStep(5);
       toast.success("Complaint submitted successfully.");
+
+      // Post-submission: Generate and upload the CivicPulse Report Card
+      if (reportRef.current) {
+        setIsGeneratingCard(true);
+        try {
+          // Wait for a small delay to ensure the card's ticket ID is rendered
+          await new Promise((r) => setTimeout(r, 500));
+
+          const dataUrl = await toPng(reportRef.current, {
+            cacheBust: true,
+            quality: 1,
+            backgroundColor: "#fff",
+          });
+
+          // Convert dataUrl to File
+          const blob = await fetch(dataUrl).then((r) => r.blob());
+          const file = new File([blob], `report-${newId}.png`, {
+            type: "image/png",
+          });
+
+          // Upload the generated card
+          const reportPhotoUrl = await appwriteService.uploadPhoto(file);
+
+          // Save generated share-card URL for Profile Gallery visibility.
+          await appwriteService.updateComplaintStatus(
+            newId,
+            "Submitted",
+            `Auto share card saved | SHARE_CARD_URL:${reportPhotoUrl}`,
+            "System",
+            reportPhotoUrl,
+          );
+
+          console.log("Report card generated and linked successfully");
+        } catch (genError) {
+          console.error("Failed to generate/upload report card:", genError);
+        } finally {
+          setIsGeneratingCard(false);
+        }
+      }
     } catch (error: any) {
       toast.error(`Submission failed: ${error.message || "Unknown error"}`);
     } finally {
@@ -625,6 +816,7 @@ export default function ReportIssue() {
 
   return (
     <div className="space-y-6">
+      <ReportCardTemplate />
       <section className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-blue-100 px-6 py-7 shadow-sm">
         <button
           onClick={() => navigate("/dashboard")}
@@ -769,11 +961,13 @@ export default function ReportIssue() {
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
             {/* Location Detection Panel */}
-            <div className={`rounded-2xl p-5 transition-all ${
-              coords
-                ? "bg-emerald-50 border border-emerald-200"
-                : "bg-sky-50 border border-sky-100"
-            }`}>
+            <div
+              className={`rounded-2xl p-5 transition-all ${
+                coords
+                  ? "bg-emerald-50 border border-emerald-200"
+                  : "bg-sky-50 border border-sky-100"
+              }`}
+            >
               <div className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                 <LocateFixed className="h-4 w-4 text-sky-700" />
                 {coords ? "✓ Location Detected" : "Current Location"}
@@ -883,9 +1077,19 @@ export default function ReportIssue() {
                 <UserCheck className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-sky-700">Will be assigned to</div>
-                <div className="mt-0.5 text-base font-bold text-slate-900">{managerPreview.manager.name}</div>
-                <div className="text-xs text-slate-500">{managerPreview.state} — one of {MANAGER_STATE_MAP.find(g => g.state === managerPreview.state)?.managers.length ?? 1} managers handling this region</div>
+                <div className="text-xs font-bold uppercase tracking-wide text-sky-700">
+                  Will be assigned to
+                </div>
+                <div className="mt-0.5 text-base font-bold text-slate-900">
+                  {managerPreview.manager.name}
+                </div>
+                <div className="text-xs text-slate-500">
+                  {managerPreview.state} — one of{" "}
+                  {MANAGER_STATE_MAP.find(
+                    (g) => g.state === managerPreview.state,
+                  )?.managers.length ?? 1}{" "}
+                  managers handling this region
+                </div>
               </div>
             </div>
           )}
@@ -1079,8 +1283,12 @@ export default function ReportIssue() {
                   <UserCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-emerald-700">Assigned Manager</div>
-                  <div className="mt-0.5 text-base font-bold text-slate-900">{assignedManagerName}</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+                    Assigned Manager
+                  </div>
+                  <div className="mt-0.5 text-base font-bold text-slate-900">
+                    {assignedManagerName}
+                  </div>
                 </div>
               </div>
             )}
@@ -1105,6 +1313,13 @@ export default function ReportIssue() {
               Back to home
             </button>
           </div>
+
+          {isGeneratingCard && (
+            <div className="mt-8 flex items-center justify-center gap-3 rounded-2xl bg-sky-50 px-6 py-4 text-sm font-bold text-sky-800 animate-pulse border border-sky-200">
+              <div className="h-2.5 w-2.5 rounded-full bg-sky-700 animate-ping" />
+              Finalizing your Official Report Card...
+            </div>
+          )}
         </section>
       )}
 
@@ -1120,14 +1335,25 @@ export default function ReportIssue() {
                 onClick={() => setShowMapPicker(false)}
                 className="text-slate-500 hover:text-slate-700 transition"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
             <p className="text-sm text-slate-500 mb-4">
-              Click on the map to select your location, or search for an address.
+              Click on the map to select your location, or search for an
+              address.
             </p>
 
             {/* Search Box */}
@@ -1138,7 +1364,7 @@ export default function ReportIssue() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handleSearchLocation();
                   }
@@ -1156,11 +1382,17 @@ export default function ReportIssue() {
 
             {/* Leaflet Map */}
             <div className="w-full">
-              <div id="map" className="relative w-full h-96 rounded-2xl overflow-hidden border border-slate-200 mb-4 bg-slate-100" ref={mapRef} />
+              <div
+                id="map"
+                className="relative w-full h-96 rounded-2xl overflow-hidden border border-slate-200 mb-4 bg-slate-100"
+                ref={mapRef}
+              />
               {coords && (
                 <div className="flex gap-3">
                   <button
-                    onClick={() => handleMapLocationSelect(coords.lat, coords.lng)}
+                    onClick={() =>
+                      handleMapLocationSelect(coords.lat, coords.lng)
+                    }
                     className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 transition"
                   >
                     Confirm Location

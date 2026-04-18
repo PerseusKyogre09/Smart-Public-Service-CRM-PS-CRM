@@ -2,12 +2,16 @@ import os
 import sys
 import time
 import schedule
+from dotenv import load_dotenv
 from appwrite.client import Client
 from appwrite.services.databases import Databases
 from appwrite.services.users import Users
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+# Load environment variables
+load_dotenv()
 
 # Ensure we can import from the backend directory if needed
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

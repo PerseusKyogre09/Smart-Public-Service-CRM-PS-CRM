@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router";
 import { ChevronDown, LogOut, Menu, Plus, Shield, X } from "lucide-react";
 import { account } from "../../appwrite";
 import { authService } from "../../appwriteService";
+import CivicAIAssistant from "./CivicAIAssistant";
 
 const navItems = [
   { to: "/dashboard", label: "Home", end: true },
@@ -212,6 +213,8 @@ export default function DashboardLayout() {
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
         <Outlet />
       </main>
+
+      <CivicAIAssistant />
     </div>
   );
 }

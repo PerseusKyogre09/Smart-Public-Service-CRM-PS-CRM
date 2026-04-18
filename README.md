@@ -1,22 +1,21 @@
-# 🌆 CivicPulse: Smart Public Service CRM (PS-CRM)
+# 🌆 CivicPulse Delhi: Smart Public Service CRM (PS-CRM)
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
 [![Appwrite](https://img.shields.io/badge/Backend_as_a_Service-Appwrite-f02e65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io)
 [![Tailwind CSS](https://img.shields.io/badge/UI-Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-**CivicPulse** is a next-generation civic engagement platform that empowers citizens to report, track, and verify public infrastructure issues in real-time. Built for speed, transparency, and accountability, it bridges the gap between the public and urban management.
+**CivicPulse Delhi** is a next-generation civic engagement platform designed for the Government of NCT of Delhi to empower citizens to report, track, and verify public infrastructure issues in real-time. Built for speed, transparency, and accountability, it bridges the gap between the public and urban management.
 
 ---
 
 ## 🏗️ Multi-Portal Ecosystem
 
 ### 👨‍💼 Citizen Portal
+_Empowering Delhi's community action through engagement._
 
-_Empowering community action through engagement._
-
-- **📍 Smart Reporting**: Report issues (potholes, garbage, etc.) with GPS auto-detection and AI-assisted category suggestions.
-- **🗺️ Interactive Map**: View nearby issues, status updates, and community verifications in real-time.
+- **📍 Smart Reporting**: Report issues (potholes, garbage, etc.) within Delhi NCR with GPS auto-detection and AI-assisted category suggestions.
+- **🗺️ Interactive Map**: View nearby issues in your ward, status updates, and community verifications in real-time.
 - **🏆 Civic Credits**: Earn reputation points for verified reports and successful resolutions.
 - **📈 Personal Dashboard**: Track your contribution history and follow the lifecycle of your complaints.
 

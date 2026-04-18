@@ -7,8 +7,10 @@ from routes.stats import router as stats_router
 from routes.uploads import router as uploads_router
 from routes.leaderboard import router as leaderboard_router
 from routes.users import router as users_router
+import threading
+from cron_job import setup_cron
 
-app = FastAPI(title="PS-CRM Backend", version="1.0.0")
+app = FastAPI(title="CivicPulse Delhi Backend", version="1.0.0")
 
 # Keep-Alive Background Task for Render Free Tier
 async def keep_alive():
@@ -25,7 +27,12 @@ async def keep_alive():
 
 @app.on_event("startup")
 async def startup_event():
+    # Start the Render keep-alive task
     asyncio.create_task(keep_alive())
+    
+    # Start the Appwrite cron job in a separate thread
+    cron_thread = threading.Thread(target=setup_cron, daemon=True)
+    cron_thread.start()
 
 app.add_middleware(
     CORSMiddleware,

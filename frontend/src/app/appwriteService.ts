@@ -140,8 +140,15 @@ export const appwriteService = {
     status: ComplaintStatus,
     note: string,
     actor: string,
+    photoUrl?: string,
   ): Promise<void> {
-    await api.patch(`/api/complaints/${id}/status`, { status, note, actor });
+    const payload: any = { status, note, actor };
+    if (photoUrl) payload.photoUrl = photoUrl;
+    await api.patch(`/api/complaints/${id}/status`, payload);
+  },
+
+  async updateComplaintShareCard(id: string, photoUrl: string): Promise<any> {
+    return api.patch<any>(`/api/complaints/${id}/share-card`, { photoUrl });
   },
 
   async updateUserReputation(userId: string, points: number): Promise<void> {
