@@ -148,6 +148,10 @@ export const DELHI_ZONE_CONFIG: Array<{
       "du campus",
       "burari",
       "pitampura",
+      "azadpur",
+      "timarpur",
+      "shalimar bagh",
+      "ashok vihar",
     ],
     x: 26,
     y: 8,
@@ -300,7 +304,7 @@ export function inferDelhiZone(complaint: any): DelhiZoneId {
     const lng = Number(coords.lng ?? coords.longitude);
 
     if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-      if (lat >= 28.72) return "north_nw";
+      if (lat >= 28.7) return "north_nw";
       if (lat <= 28.56) return "south";
       if (lng >= 77.28) return "east_shahdara";
       if (lng <= 77.08) return "west";

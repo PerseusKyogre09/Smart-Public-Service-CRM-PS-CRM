@@ -49,7 +49,8 @@ DELHI_ZONE_CONFIG = [
         "name": "North & North-West Delhi",
         "keywords": ["north delhi", "north west delhi", "north-west delhi",
                      "rohini", "model town", "narela", "delhi university",
-                     "du campus", "burari", "pitampura", "azadpur", "timarpur"],
+                     "du campus", "burari", "pitampura", "azadpur", "timarpur",
+                     "shalimar bagh", "ashok vihar"],
     },
 ]
 
@@ -88,7 +89,7 @@ def detect_zone_from_complaint(address: str = "", coordinates: dict = None) -> s
             lat, lng = float(lat), float(lng)
             # 2D bounding boxes for each zone (order matters — check specific zones before default)
             # North & NW: upper part of Delhi
-            if lat >= 28.72:
+            if lat >= 28.70:
                 return "north_nw"
             # South: lower part of Delhi
             if lat <= 28.56:
