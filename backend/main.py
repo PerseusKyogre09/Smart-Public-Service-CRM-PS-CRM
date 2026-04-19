@@ -1,3 +1,4 @@
+import os
 import asyncio
 import httpx
 from fastapi import FastAPI
@@ -17,7 +18,7 @@ app = FastAPI(title="CivicPulse Delhi Backend", version="1.0.0")
 # Keep-Alive Background Task for Render Free Tier
 async def keep_alive():
     """Pings the server every 5 minutes to prevent Render from sleeping."""
-    url = "https://smart-public-service-crm-ps-crm.onrender.com/health"
+    url = os.getenv("RENDER_URL", "http://localhost:8000") + "/health"
     await asyncio.sleep(60)  # Wait for startup
     async with httpx.AsyncClient() as client:
         while True:
