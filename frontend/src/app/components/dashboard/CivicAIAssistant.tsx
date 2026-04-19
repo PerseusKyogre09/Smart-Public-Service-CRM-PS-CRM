@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { Bot, HelpCircle, Send, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -197,7 +197,7 @@ export default function CivicAIAssistant({
 }: {
   type?: PortalType;
 }) {
-  const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -237,6 +237,26 @@ export default function CivicAIAssistant({
     return reversed.find((m) => m.from === "bot")?.text || "";
   }, [messages]);
 
+  const getCurrentPageContext = () => {
+    const path = location.pathname;
+    if (path === "/") return "Landing Page";
+    if (path.includes("/citizen")) {
+      if (path.includes("/reporting")) return "Citizen: Complaint Reporting Page";
+      if (path.includes("/complaints")) return "Citizen: My Complaints History";
+      return "Citizen Portal";
+    }
+    if (path.includes("/manager")) {
+      if (path.includes("/dashboard")) return "Manager: Dashboard Overview";
+      if (path.includes("/complaints")) return "Manager: Active Complaints Queue";
+      return "Manager Portal";
+    }
+    if (path.includes("/worker")) {
+      if (path.includes("/dashboard")) return "Worker: Task My Dashboard";
+      return "Worker Portal";
+    }
+    return `Path: ${path}`;
+  };
+
   const askQuestion = async (question: string) => {
     const trimmed = question.trim();
     if (!trimmed || isLoading) return;
@@ -269,6 +289,7 @@ export default function CivicAIAssistant({
           portal_type: type,
           history: history,
           language: language,
+          page_context: getCurrentPageContext(),
         }),
       });
 
