@@ -65,6 +65,8 @@ _STATE_ALIASES: dict[str, str] = {
     "new delhi": "Delhi",
 }
 
+ALLOWED_COMPLAINT_STATE = "Delhi"
+
 def _resolve_state_from_address(addr: dict) -> str:
     """Tries multiple Nominatim address fields to find a known state."""
     candidates = [
@@ -258,6 +260,12 @@ async def create_complaint(body: ComplaintCreate):
             state = get_state_from_coords(body.coordinates["lat"], body.coordinates["lng"])
         if state == "Unknown" and body.address:
             state = get_state_from_address_text(body.address)
+
+        if state != ALLOWED_COMPLAINT_STATE:
+            raise HTTPException(
+                status_code=400,
+                detail="Only Delhi locations are allowed for complaint reporting.",
+            )
         
         # Use frontend-provided manager if available, otherwise auto-assign
         if body.assignedManagerName and body.assignedManagerState:
@@ -289,6 +297,8 @@ async def create_complaint(body: ComplaintCreate):
         }
         doc = databases.create_document(DATABASE_ID, COLLECTION_ID, "unique()", payload)
         return {"id": doc["$id"], "assignedManager": assigned_manager["name"]}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

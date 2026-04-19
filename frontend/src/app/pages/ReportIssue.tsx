@@ -277,13 +277,12 @@ export default function ReportIssue() {
     </div>
   );
 
-  // Geofence boundaries for allowed service area (Delhi-NCR + Uttar Pradesh)
-  // Excludes Bihar and other states
+  // Geofence boundaries for allowed service area (Delhi only)
   const GEOFENCE_BOUNDS = {
-    minLat: 26.5, // South boundary (exclude Bihar)
-    maxLat: 31.0, // North boundary (include UP)
-    minLng: 76.5, // West boundary
-    maxLng: 80.5, // East boundary (include UP)
+    minLat: 28.35,
+    maxLat: 28.95,
+    minLng: 76.8,
+    maxLng: 77.45,
   };
 
   const isLocationAllowed = (lat: number, lng: number): boolean => {
@@ -295,16 +294,16 @@ export default function ReportIssue() {
     const { minLat, maxLat, minLng, maxLng } = GEOFENCE_BOUNDS;
 
     if (lat < minLat) {
-      return "❌ This location is outside our service area (too far south - possibly Bihar). Please select a location within Delhi-NCR or Uttar Pradesh.";
+      return "This location is outside our service area. Please select a location within Delhi only.";
     }
     if (lat > maxLat) {
-      return "❌ This location is outside our service area (too far north). Please select a location within Delhi-NCR or Uttar Pradesh.";
+      return "This location is outside our service area. Please select a location within Delhi only.";
     }
     if (lng < minLng) {
-      return "❌ This location is outside our service area (too far west). Please select a location within Delhi-NCR or Uttar Pradesh.";
+      return "This location is outside our service area. Please select a location within Delhi only.";
     }
     if (lng > maxLng) {
-      return "❌ This location is outside our service area (too far east). Please select a location within Delhi-NCR or Uttar Pradesh.";
+      return "This location is outside our service area. Please select a location within Delhi only.";
     }
     return "This location is outside our service area.";
   };
@@ -414,8 +413,6 @@ export default function ReportIssue() {
                 addr.state ||
                 (addr.address.includes("Delhi")
                   ? "Delhi"
-                  : addr.address.includes("Uttar Pradesh")
-                    ? "Uttar Pradesh"
                     : "Unknown");
 
               // Show manager preview based on detected state
@@ -665,7 +662,7 @@ export default function ReportIssue() {
     try {
       const searchTerm = `${searchQuery}`;
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&viewbox=76.5,26.5,80.5,31.0&bounded=1`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&viewbox=76.8,28.35,77.45,28.95&bounded=1`,
       );
       const data = await response.json();
 
@@ -677,7 +674,7 @@ export default function ReportIssue() {
         // Validate location is within allowed bounds before proceeding
         if (!isLocationAllowed(lat, lng)) {
           toast.error(
-            `"${result.display_name}" is outside our service area. Please search for a location in Delhi-NCR or Uttar Pradesh.`,
+            `"${result.display_name}" is outside our service area. Please search for a location in Delhi only.`,
           );
           return;
         }
@@ -688,7 +685,7 @@ export default function ReportIssue() {
         toast.success(`Found: ${result.display_name}`);
       } else {
         toast.error(
-          "Location not found in our service area. Try searching for a specific address, landmark, or city (Delhi, Noida, Lucknow, etc.)",
+          "Location not found in our service area. Try searching for a specific Delhi address, landmark, or locality.",
         );
       }
     } catch (error) {
@@ -730,7 +727,7 @@ export default function ReportIssue() {
       // Validate the location (either from user selection or auto-geocoding)
       if (finalCoords && !isLocationAllowed(finalCoords.lat, finalCoords.lng)) {
         toast.error(
-          `The location "${address || area}" is outside our service area. Please select a location within Delhi-NCR or Uttar Pradesh.`,
+          `The location "${address || area}" is outside our service area. Please select a location within Delhi only.`,
         );
         setIsSubmitting(false);
         return;
