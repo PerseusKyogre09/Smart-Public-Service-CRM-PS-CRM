@@ -2,6 +2,7 @@ import json
 import math
 from datetime import datetime, timedelta, UTC
 from typing import Optional
+from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Query as FastAPIQuery
 from pydantic import BaseModel
 from appwrite.query import Query
@@ -18,7 +19,23 @@ geolocator = Nominatim(user_agent="smart_crm_ps_crm")
 def assign_manager_to_complaint(complaint_state: str) -> dict:
     """Assigns the manager with the least active complaints for the given state."""
     try:
-        # 1. Get managers for this state from Appwrite
+        # Fast Path: Get the single manager with lowest activeComplaints
+        resp = databases.list_documents(
+            DATABASE_ID, MANAGERS_COLLECTION_ID,
+            queries=[
+                Query.equal("state", complaint_state),
+                Query.order_asc("activeComplaints"),
+                Query.limit(1)
+            ]
+        )
+        if resp.get("documents"):
+            mgr_doc = resp["documents"][0]
+            return {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
+    except Exception as e:
+        print(f"DB_FAST_MANAGER_FETCH_ERROR: {e}")
+
+    # Fallback Path: Original counting logic if activeComplaints approach fails
+    try:
         resp = databases.list_documents(
             DATABASE_ID, MANAGERS_COLLECTION_ID,
             queries=[Query.equal("state", complaint_state), Query.limit(100)]
@@ -31,28 +48,42 @@ def assign_manager_to_complaint(complaint_state: str) -> dict:
     if not state_managers:
         return {"id": "SYSTEM", "name": "SystemAdmin"}
 
-    # 2. Count active (non-resolved) complaints per manager
     manager_workloads = []
     for mgr_doc in state_managers:
         mgr = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
-        try:
-            resp = databases.list_documents(
-                DATABASE_ID, COLLECTION_ID,
-                queries=[
-                    Query.equal("assignedManagerId", mgr["id"]),
-                    Query.not_equal("status", "Resolved"),
-                    Query.not_equal("status", "Closed"),
-                    Query.limit(1),  # we only need the total count
-                ]
-            )
-            count = resp.get("total", 0)
-        except Exception:
-            count = 0
+        count = mgr_doc.get("activeComplaints")
+        if count is None:
+            try:
+                resp = databases.list_documents(
+                    DATABASE_ID, COLLECTION_ID,
+                    queries=[
+                        Query.equal("assignedManagerId", mgr["id"]),
+                        Query.not_equal("status", "Resolved"),
+                        Query.not_equal("status", "Closed"),
+                        Query.limit(1),  # we only need the total count
+                    ]
+                )
+                count = resp.get("total", 0)
+            except Exception:
+                count = 0
         manager_workloads.append((mgr, count))
 
-    # 3. Pick the manager with the fewest active complaints
     best_manager = min(manager_workloads, key=lambda x: x[1])[0]
     return best_manager
+
+def update_manager_workload(manager_id: str, delta: int):
+    """Safely updates the activeComplaints count for a manager. Fail-safe."""
+    try:
+        if not manager_id or manager_id == "SYSTEM" or manager_id.startswith("MGR-UNK"):
+            return
+        mgr_doc = databases.get_document(DATABASE_ID, MANAGERS_COLLECTION_ID, manager_id)
+        current_count = mgr_doc.get("activeComplaints") or 0
+        new_count = max(0, current_count + delta)
+        databases.update_document(DATABASE_ID, MANAGERS_COLLECTION_ID, manager_id, {
+            "activeComplaints": new_count
+        })
+    except Exception as e:
+        print(f"WORKLOAD_UPDATE_ERROR for {manager_id}: {e}")
 
 
 # ── Business Logic ─────────────────────────────────────────────────────────────
@@ -90,16 +121,20 @@ def _resolve_state_from_address(addr: dict) -> str:
     return "Unknown"
 
 
-def get_state_from_coords(lat: float, lng: float) -> str:
-    """Reverse geocodes coordinates to find the State."""
+@lru_cache(maxsize=1024)
+def _cached_reverse_geocode(lat_round: float, lng_round: float) -> str:
+    """Cached geocoding with precision handling to minimize external calls."""
     try:
-        location = geolocator.reverse((lat, lng), exactly_one=True, timeout=10)
+        location = geolocator.reverse((lat_round, lng_round), exactly_one=True, timeout=10)
         if location and "address" in location.raw:
             return _resolve_state_from_address(location.raw["address"])
     except Exception:
         pass
     return "Unknown"
 
+def get_state_from_coords(lat: float, lng: float) -> str:
+    """Reverse geocodes coordinates to find the State. Cached to ~111m precision."""
+    return _cached_reverse_geocode(round(lat, 3), round(lng, 3))
 
 def get_state_from_address_text(address: str) -> str:
     """Extracts state from a free-text address string (used when no GPS coords)."""
@@ -304,6 +339,11 @@ async def create_complaint(body: ComplaintCreate):
             "assignedManagerName": assigned_manager["name"],
         }
         doc = databases.create_document(DATABASE_ID, COLLECTION_ID, "unique()", payload)
+        
+        # Increment manager workload tracking
+        if doc.get("status") not in ("Resolved", "Closed"):
+            update_manager_workload(assigned_manager["id"], 1)
+
         return {"id": doc["$id"], "assignedManager": assigned_manager["name"]}
     except HTTPException:
         raise
@@ -371,6 +411,12 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         
         databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, update_payload)
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
+
+        # Workload tracking: Handle resolution/closure decrement
+        old_status = doc.get("status")
+        if old_status not in ("Resolved", "Closed") and body.status in ("Resolved", "Closed"):
+            update_manager_workload(doc.get("assignedManagerId"), -1)
+            
         return _map_doc(updated)
     except HTTPException:
         raise
@@ -432,6 +478,14 @@ async def assign_manager(complaint_id: str, body: AssignManager):
             "timeline": json.dumps(timeline),
             "updatedAt": datetime.now(UTC).isoformat(),
         })
+        
+        # Workload tracking: transfer load if not resolved
+        if doc.get("status") not in ("Resolved", "Closed"):
+            old_manager_id = doc.get("assignedManagerId")
+            new_manager_id = body.managerId
+            if old_manager_id != new_manager_id:
+                update_manager_workload(old_manager_id, -1)
+                update_manager_workload(new_manager_id, 1)
         
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
         return _map_doc(updated)
