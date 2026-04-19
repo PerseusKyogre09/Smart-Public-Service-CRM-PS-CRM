@@ -219,13 +219,7 @@ const features = [
     icon: BarChart3,
     title: "Analytics & Heatmaps",
     desc: "Area-level complaint density heatmaps, KPI dashboards (MTTA, MTTR, SLA compliance), and department-wise performance tracking for officials.",
-    color: "text-rose-500",
     bg: "bg-rose-50",
-  },
-  {
-    icon: Award,
-    title: "Citizen Leaderboards",
-    desc: "Earn reputation and climb the city-wide leaderboard by reporting genuine issues and verifying solutions. Civic credits represent your contribution to making Delhi better.",
   },
 ];
 
@@ -544,7 +538,7 @@ export default function LandingPage() {
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-              {["Features", "How It Works", "For Officials", "Leaderboard"].map(
+              {["Features", "How It Works", "For Officials"].map(
                 (item) => (
                   <button
                     key={item}
@@ -593,7 +587,7 @@ export default function LandingPage() {
 
         {navOpen && (
           <div className="md:hidden bg-white border-t border-slate-100 px-4 py-4 space-y-3">
-            {["Features", "How It Works", "For Officials", "Leaderboard"].map(
+            {["Features", "How It Works", "For Officials"].map(
               (item) => (
                 <button
                   key={item}

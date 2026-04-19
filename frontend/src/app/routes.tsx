@@ -7,7 +7,6 @@ import ReportIssue from "./pages/ReportIssue";
 import MyComplaints from "./pages/MyComplaints";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import Profile from "./pages/Profile";
-import Leaderboard from "./pages/Leaderboard";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminQueue from "./pages/admin/AdminQueue";
@@ -41,7 +40,6 @@ export const router = createBrowserRouter([
           { path: "report", Component: ReportIssue },
           { path: "complaints", Component: MyComplaints },
           { path: "complaints/:id", Component: ComplaintDetail },
-          { path: "leaderboard", Component: Leaderboard },
           { path: "profile", Component: Profile },
         ],
       },

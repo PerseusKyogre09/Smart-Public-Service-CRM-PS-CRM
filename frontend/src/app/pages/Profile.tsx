@@ -15,7 +15,6 @@ import {
   FileText,
   Image as ImageIcon,
   Share2,
-  Downloads,
   Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -106,6 +105,8 @@ export default function Profile() {
     reported: 0,
     resolved: 0,
     reputationScore: 0,
+    wardRank: "...",
+    streak: 0,
   });
   const [currentUser, setCurrentUser] = useState<any>({
     name: "Citizen",
@@ -134,12 +135,13 @@ export default function Profile() {
     const score =
       sorted.length * 10 +
       sorted.filter((c) => c.status === "Resolved").length * 50;
-    setUserStats({
+    setUserStats((prev) => ({
+      ...prev,
       reported: sorted.length,
       resolved: sorted.filter((c) => ["Resolved", "Closed"].includes(c.status))
         .length,
       reputationScore: score,
-    });
+    }));
 
     const level =
       score >= 1000
@@ -163,6 +165,16 @@ export default function Profile() {
           joinedDate: formatDate(user.registration || user.$createdAt),
         }));
         setNewName(user.name || "");
+        appwriteService.getUserProfileStats(user.$id).then((stats) => {
+          if (stats) {
+            setUserStats((prev) => ({
+              ...prev,
+              wardRank: stats.wardRank || "Top 100%",
+              streak: stats.streak || 0,
+            }));
+          }
+        });
+
         return appwriteService.subscribeToUserComplaints(
           user.$id,
           (userComplaints) => {
@@ -214,7 +226,7 @@ export default function Profile() {
     } catch (_) {
       try {
         await account.deleteSession("current");
-      } catch (_) {}
+      } catch (_) { }
     }
     navigate("/login");
   };
@@ -548,7 +560,7 @@ export default function Profile() {
                 },
                 {
                   label: "Community Rank",
-                  value: "Top 5%",
+                  value: userStats.wardRank,
                   color: "text-sky-700",
                   icon: Award,
                 },
@@ -649,10 +661,10 @@ export default function Profile() {
                       </div>
                       <div className="flex-1">
                         <div className="text-[11px] font-bold text-slate-900 uppercase">
-                          Streak: 3 Days
+                          Streak: {userStats.streak} {userStats.streak === 1 ? "Day" : "Days"}
                         </div>
                         <div className="text-[10px] text-slate-500">
-                          Keep it up, Citizen!
+                          {userStats.streak > 0 ? "You're on fire, Citizen!" : "Report today to start a streak!"}
                         </div>
                       </div>
                     </div>
@@ -872,14 +884,13 @@ export default function Profile() {
                       Status
                     </div>
                     <div
-                      className={`text-4xl font-black uppercase tracking-tight mt-1 ${
-                        ["Resolved", "Closed"].includes(
-                          complaints.find((c) => c.$id === isGenerating)
-                            ?.status,
-                        )
-                          ? "text-emerald-600"
-                          : "text-orange-500"
-                      }`}
+                      className={`text-4xl font-black uppercase tracking-tight mt-1 ${["Resolved", "Closed"].includes(
+                        complaints.find((c) => c.$id === isGenerating)
+                          ?.status,
+                      )
+                        ? "text-emerald-600"
+                        : "text-orange-500"
+                        }`}
                     >
                       {complaints.find((c) => c.$id === isGenerating)?.status ||
                         "VALIDATED"}

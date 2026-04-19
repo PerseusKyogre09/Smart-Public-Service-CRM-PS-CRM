@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Bot, HelpCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, HelpCircle, Maximize2, Minimize2, Send, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 type PortalType = "citizen" | "manager" | "worker";
@@ -199,6 +199,7 @@ export default function CivicAIAssistant({
 }) {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState<"English" | "Hinglish">("English");
@@ -330,27 +331,40 @@ export default function CivicAIAssistant({
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <div className={`fixed bottom-24 right-4 z-50 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${isExpanded ? "w-[500px]" : "w-[340px]"} max-w-[calc(100vw-2rem)]`}>
           <div className="bg-gradient-to-r from-sky-700 to-indigo-700 px-4 py-3 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5" />
                 <div className="font-bold tracking-tight">{config.name}</div>
               </div>
-              <button
-                onClick={() => setLanguage((l) => (l === "English" ? "Hinglish" : "English"))}
-                className="flex items-center gap-1.5 px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/10"
-              >
-                <div className="text-[10px] uppercase font-bold tracking-widest leading-none">
-                  {language}
-                </div>
-                <div className="w-6 h-3 bg-white/20 rounded-full relative">
-                  <motion.div
-                    animate={{ x: language === "English" ? 2 : 12 }}
-                    className="absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm"
-                  />
-                </div>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors border border-white/10"
+                  title={isExpanded ? "Minimize" : "Expand"}
+                >
+                  {isExpanded ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setLanguage((l) => (l === "English" ? "Hinglish" : "English"))}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/10"
+                >
+                  <div className="text-[10px] uppercase font-bold tracking-widest leading-none">
+                    {language}
+                  </div>
+                  <div className="w-6 h-3 bg-white/20 rounded-full relative">
+                    <motion.div
+                      animate={{ x: language === "English" ? 2 : 12 }}
+                      className="absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm"
+                    />
+                  </div>
+                </button>
+              </div>
             </div>
             <div className="mt-1 text-xs text-sky-100 italic opacity-90">
               {type === "citizen"
@@ -363,7 +377,7 @@ export default function CivicAIAssistant({
 
           <div
             ref={messagesContainerRef}
-            className="max-h-[280px] min-h-[100px] space-y-3 overflow-y-auto px-4 py-3"
+            className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[500px] min-h-[300px]" : "max-h-[280px] min-h-[100px]"} space-y-3 overflow-y-auto px-4 py-3`}
           >
             {messages.map((m) => (
               <div
