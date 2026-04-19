@@ -6,7 +6,7 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Query as FastAPIQuery
 from pydantic import BaseModel
 from appwrite.query import Query
-from appwrite_client import databases, DATABASE_ID, COLLECTION_ID, MANAGERS_COLLECTION_ID
+from appwrite_client import databases, DATABASE_ID, COLLECTION_ID, MANAGERS_COLLECTION_ID, WORKERS_COLLECTION_ID
 from geopy.geocoders import Nominatim
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
@@ -223,6 +223,8 @@ class StatusUpdate(BaseModel):
     actor: Optional[str] = "System"
     assignedTo: Optional[str] = None
     photoUrl: Optional[str] = None
+    rating: Optional[float] = None
+    feedback: Optional[str] = None
 
 
 class AssignManager(BaseModel):
@@ -379,16 +381,56 @@ async def get_complaint(complaint_id: str):
         raise HTTPException(status_code=404, detail="Complaint not found")
 
 
+def _update_worker_rating(worker_name: str, new_rating: float):
+    """Updates the worker's average rating based on the new rating."""
+    try:
+        # 1. Find the worker by name
+        resp = databases.list_documents(
+            DATABASE_ID, WORKERS_COLLECTION_ID,
+            queries=[Query.equal("name", worker_name), Query.limit(1)]
+        )
+        if not resp.get("documents"):
+            print(f"WORKER_NOT_FOUND_FOR_RATING: {worker_name}")
+            return
+        
+        worker_doc = resp["documents"][0]
+        worker_id = worker_doc["$id"]
+        
+        # 2. Calculate new average
+        current_rating = worker_doc.get("rating") or 0.0
+        current_count = worker_doc.get("ratingCount") or 0
+        
+        new_count = current_count + 1
+        new_average = ((current_rating * current_count) + new_rating) / new_count
+        new_average = round(new_average, 2)
+        
+        # 3. Update worker document
+        databases.update_document(DATABASE_ID, WORKERS_COLLECTION_ID, worker_id, {
+            "rating": new_average,
+            "ratingCount": new_count
+        })
+        print(f"WORKER_RATING_UPDATED: {worker_name} ({new_average} based on {new_count} ratings)")
+    except Exception as e:
+        print(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
+
+
 @router.patch("/{complaint_id}/status")
 async def update_status(complaint_id: str, body: StatusUpdate):
     try:
         doc = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
-        timeline = doc.get("timeline", "[]")
-        if isinstance(timeline, str):
+        
+        timeline = doc.get("timeline")
+        if timeline is None:
+            timeline = []
+        elif isinstance(timeline, str):
             try:
                 timeline = json.loads(timeline)
             except Exception:
                 timeline = []
+        
+        if not isinstance(timeline, list):
+            timeline = []
+
         timeline.append({
             "status": body.status,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -409,6 +451,12 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if body.photoUrl:
             update_payload["photoUrl"] = body.photoUrl
         
+        if body.rating is not None:
+            update_payload["rating"] = body.rating
+        
+        if body.feedback:
+            update_payload["feedback"] = body.feedback
+        
         databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, update_payload)
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
 
@@ -417,11 +465,18 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if old_status not in ("Resolved", "Closed") and body.status in ("Resolved", "Closed"):
             update_manager_workload(doc.get("assignedManagerId"), -1)
             
+        # Rating update: If closing with a rating, update the worker's rating
+        if body.status == "Closed" and body.rating is not None:
+            worker_name = doc.get("assignedTo")
+            if worker_name:
+                _update_worker_rating(worker_name, body.rating)
+            
         return _map_doc(updated)
     except HTTPException:
         raise
     except Exception as e:
-        print(f"STATUS_UPDATE_ERROR: {str(e)}")
+        import traceback
+        print(f"STATUS_UPDATE_ERROR: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
