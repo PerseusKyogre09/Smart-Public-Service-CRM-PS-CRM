@@ -11,4 +11,4 @@ __pycache__/
 .coverage
 htmlcov/
 frontend/dist/
-login_credential.md
+
