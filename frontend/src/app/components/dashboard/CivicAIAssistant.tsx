@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Bot, HelpCircle, Send, Sparkles, X } from "lucide-react";
+import { motion } from "framer-motion";
 
 type PortalType = "citizen" | "manager" | "worker";
 
@@ -12,21 +13,33 @@ type ChatMessage = {
 
 interface PortalConfig {
   name: string;
-  welcome: string;
+  welcome: {
+    English: string;
+    Hinglish: string;
+  };
 }
 
 const portalConfigs: Record<PortalType, PortalConfig> = {
   citizen: {
     name: "Civic AI Assistant",
-    welcome: "Hi, I am Civic AI Assistant. Ask me anything about reporting, tracking, and sharing complaints.",
+    welcome: {
+      English: "Hi, I am Civic AI Assistant. Ask me anything about reporting, tracking, and sharing complaints.",
+      Hinglish: "Namaste! Main aapka Civic AI Assistant hoon. Complaint report karne, track karne ya share karne ke baare mein kuch bhi puchein."
+    },
   },
   manager: {
     name: "Manager Support AI",
-    welcome: "Welcome, Manager. I can help with worker assignment, SLA tracking, and operational oversight.",
+    welcome: {
+      English: "Welcome, Manager. I can help with worker assignment, SLA tracking, and operational oversight.",
+      Hinglish: "Swagat hai, Manager saab. Main worker assignment, SLA tracking aur operational tasks mein aapki help kar sakta hoon."
+    },
   },
   worker: {
     name: "Worker Field AI",
-    welcome: "Field Assistant active. Ask about resolution steps, GPS locking, or task priorities.",
+    welcome: {
+      English: "Field Assistant active. Ask about resolution steps, GPS locking, or task priorities.",
+      Hinglish: "Field Assistant active hai. Resolution steps, GPS locking ya task priorities ke baare mein puchein."
+    },
   },
 };
 
@@ -188,6 +201,7 @@ export default function CivicAIAssistant({
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [language, setLanguage] = useState<"English" | "Hinglish">("English");
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const config = portalConfigs[type];
@@ -196,21 +210,21 @@ export default function CivicAIAssistant({
     {
       id: 1,
       from: "bot",
-      text: config.welcome,
+      text: config.welcome[language],
     },
   ]);
   const messageIdRef = useRef(2);
 
-  // Sync welcome message if type changes
+  // Sync welcome message if type or language changes
   useEffect(() => {
     setMessages([
       {
         id: 1,
         from: "bot",
-        text: config.welcome,
+        text: config.welcome[language],
       },
     ]);
-  }, [type, config.welcome]);
+  }, [type, config.welcome, language]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -254,6 +268,7 @@ export default function CivicAIAssistant({
           message: trimmed,
           portal_type: type,
           history: history,
+          language: language,
         }),
       });
 
@@ -296,9 +311,25 @@ export default function CivicAIAssistant({
       {isOpen && (
         <div className="fixed bottom-24 right-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
           <div className="bg-gradient-to-r from-sky-700 to-indigo-700 px-4 py-3 text-white">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              <div className="font-bold tracking-tight">{config.name}</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                <div className="font-bold tracking-tight">{config.name}</div>
+              </div>
+              <button
+                onClick={() => setLanguage((l) => (l === "English" ? "Hinglish" : "English"))}
+                className="flex items-center gap-1.5 px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/10"
+              >
+                <div className="text-[10px] uppercase font-bold tracking-widest leading-none">
+                  {language}
+                </div>
+                <div className="w-6 h-3 bg-white/20 rounded-full relative">
+                  <motion.div
+                    animate={{ x: language === "English" ? 2 : 12 }}
+                    className="absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm"
+                  />
+                </div>
+              </button>
             </div>
             <div className="mt-1 text-xs text-sky-100 italic opacity-90">
               {type === "citizen"
@@ -319,15 +350,15 @@ export default function CivicAIAssistant({
                 className={m.from === "user" ? "text-right" : "text-left"}
               >
                 <div
-                  className={`inline-block max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${m.from === "user"
-                    ? "bg-sky-700 text-white"
-                    : "bg-slate-100 text-slate-800"
+                  className={`inline-block max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${m.from === "user" ? "bg-sky-700 text-white" : "bg-slate-100 text-slate-800"
                     }`}
                 >
                   <ReactMarkdown
                     components={{
                       p: ({ node, ...props }) => <p {...props} className="mb-0" />,
-                      strong: ({ node, ...props }) => <strong {...props} className="font-black text-slate-950" />,
+                      strong: ({ node, ...props }) => (
+                        <strong {...props} className="font-black text-slate-950" />
+                      ),
                     }}
                   >
                     {m.text}
@@ -372,9 +403,7 @@ export default function CivicAIAssistant({
 
             {lastBotReply && (
               <div className="mt-3 flex items-center justify-end font-medium text-slate-400">
-                <div className="text-[10px]">
-                  v3.0 Production
-                </div>
+                <div className="text-[10px]">v3.0 Production</div>
               </div>
             )}
           </div>

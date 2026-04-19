@@ -332,14 +332,15 @@ export default function ManagerOverview() {
       });
   };
 
-  // Reassign worker after rejection
+  // Reassign worker
   const handleReassignWorker = (worker: Worker) => {
-    if (!selectedReview) return;
+    const target = selectedReview || selectedComplaint;
+    if (!target) return;
 
     api
-      .patch(`/api/complaints/${selectedReview.id}/status`, {
+      .patch(`/api/complaints/${target.id}/status`, {
         status: "Assigned",
-        note: `Reassigned to ${worker.name} after rejection`,
+        note: `Reassigned to ${worker.name}`,
         actor: manager?.name || "Manager",
         assignedTo: worker.name,
       })
@@ -347,26 +348,28 @@ export default function ManagerOverview() {
         // Update local state
         setComplaints((prev) =>
           prev.map((c) =>
-            c.id === selectedReview.id
+            c.id === target.id
               ? { ...c, status: "Assigned", assignedTo: worker.name }
               : c,
           ),
         );
         setShowReassignModal(false);
         setSelectedReview(null);
+        setSelectedComplaint(null);
         toast.success(`Reassigned to ${worker.name}`);
       })
       .catch(() => {
         // Optimistic update
         setComplaints((prev) =>
           prev.map((c) =>
-            c.id === selectedReview.id
+            c.id === target.id
               ? { ...c, status: "Assigned", assignedTo: worker.name }
               : c,
           ),
         );
         setShowReassignModal(false);
         setSelectedReview(null);
+        setSelectedComplaint(null);
         toast.success(`Reassigned to ${worker.name}`);
       });
   };
@@ -1065,16 +1068,19 @@ export default function ManagerOverview() {
         )}
       </AnimatePresence>
 
-      {/* Reassign Worker Modal (after rejection) */}
+      {/* Reassign Worker Modal */}
       <AnimatePresence>
-        {showReassignModal && selectedReview && (
+        {showReassignModal && (selectedReview || selectedComplaint) && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/10 backdrop-blur-sm"
-              onClick={() => setShowReassignModal(false)}
+              onClick={() => {
+                setShowReassignModal(false);
+                setSelectedReview(null);
+              }}
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
@@ -1086,19 +1092,19 @@ export default function ManagerOverview() {
                 Reassign command
               </h3>
               <p className="text-sm font-medium text-slate-500 mb-6">
-                Ticket rejected from <span className="text-slate-900 font-bold">{selectedReview.assignedTo}</span>. Select an alternative technician.
+                Current technician: <span className="text-slate-900 font-bold">{(selectedReview || selectedComplaint)?.assignedTo || "None"}</span>. Select an alternative personnel.
               </p>
 
               <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 mb-8 flex items-center gap-3">
                 <AlertCircle className="text-amber-600" size={16} />
                 <p className="text-xs text-amber-900 font-semibold truncate flex-1">
-                  {selectedReview.address}
+                  {(selectedReview || selectedComplaint)?.address}
                 </p>
               </div>
 
               <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                 {stateWorkers
-                  .filter((w) => w.name !== selectedReview.assignedTo)
+                  .filter((w) => w.name !== (selectedReview || selectedComplaint)?.assignedTo)
                   .map((worker: Worker) => (
                     <button
                       key={worker.id}
@@ -1124,7 +1130,10 @@ export default function ManagerOverview() {
               </div>
 
               <button
-                onClick={() => setShowReassignModal(false)}
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setSelectedReview(null);
+                }}
                 className="mt-8 w-full py-4 text-sm font-semibold text-slate-400 hover:text-slate-600 transition-colors"
               >
                 Cancel reassignment
