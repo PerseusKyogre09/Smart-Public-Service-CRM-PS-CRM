@@ -2,10 +2,11 @@ import json
 import math
 from datetime import datetime, timedelta, UTC
 from typing import Optional
+from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Query as FastAPIQuery
 from pydantic import BaseModel
 from appwrite.query import Query
-from appwrite_client import databases, DATABASE_ID, COLLECTION_ID
+from appwrite_client import databases, DATABASE_ID, COLLECTION_ID, MANAGERS_COLLECTION_ID, WORKERS_COLLECTION_ID
 from geopy.geocoders import Nominatim
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
@@ -15,45 +16,74 @@ geolocator = Nominatim(user_agent="smart_crm_ps_crm")
 
 # ── Delhi Specific Manager Config ─────────────────────────────
 
-MOCK_MANAGERS = [
-    # Delhi (5 managers)
-    {"id": "MGR-DEL-01", "name": "Sanjay Sharma",  "state": "Delhi"},
-    {"id": "MGR-DEL-02", "name": "Meena Kumari",   "state": "Delhi"},
-    {"id": "MGR-DEL-03", "name": "Rajesh Tyagi",   "state": "Delhi"},
-    {"id": "MGR-DEL-04", "name": "Anita Singh",    "state": "Delhi"},
-    {"id": "MGR-DEL-05", "name": "Amit Goel",      "state": "Delhi"},
-]
-
-
 def assign_manager_to_complaint(complaint_state: str) -> dict:
     """Assigns the manager with the least active complaints for the given state."""
-    # 1. Get managers for this state
-    state_managers = [m for m in MOCK_MANAGERS if m["state"].lower() == complaint_state.lower()]
+    try:
+        # Fast Path: Get the single manager with lowest activeComplaints
+        resp = databases.list_documents(
+            DATABASE_ID, MANAGERS_COLLECTION_ID,
+            queries=[
+                Query.equal("state", complaint_state),
+                Query.order_asc("activeComplaints"),
+                Query.limit(1)
+            ]
+        )
+        if resp.get("documents"):
+            mgr_doc = resp["documents"][0]
+            return {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
+    except Exception as e:
+        print(f"DB_FAST_MANAGER_FETCH_ERROR: {e}")
+
+    # Fallback Path: Original counting logic if activeComplaints approach fails
+    try:
+        resp = databases.list_documents(
+            DATABASE_ID, MANAGERS_COLLECTION_ID,
+            queries=[Query.equal("state", complaint_state), Query.limit(100)]
+        )
+        state_managers = resp.get("documents", [])
+    except Exception as e:
+        print(f"DB_MANAGER_FETCH_ERROR: {e}")
+        state_managers = []
 
     if not state_managers:
         return {"id": "SYSTEM", "name": "SystemAdmin"}
 
-    # 2. Count active (non-resolved) complaints per manager
     manager_workloads = []
-    for mgr in state_managers:
-        try:
-            resp = databases.list_documents(
-                DATABASE_ID, COLLECTION_ID,
-                queries=[
-                    Query.equal("assignedManagerId", mgr["id"]),
-                    Query.not_equal("status", "Resolved"),
-                    Query.not_equal("status", "Closed"),
-                    Query.limit(1),  # we only need the total count
-                ]
-            )
-            count = resp.get("total", 0)
-        except Exception:
-            count = 0
+    for mgr_doc in state_managers:
+        mgr = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
+        count = mgr_doc.get("activeComplaints")
+        if count is None:
+            try:
+                resp = databases.list_documents(
+                    DATABASE_ID, COLLECTION_ID,
+                    queries=[
+                        Query.equal("assignedManagerId", mgr["id"]),
+                        Query.not_equal("status", "Resolved"),
+                        Query.not_equal("status", "Closed"),
+                        Query.limit(1),  # we only need the total count
+                    ]
+                )
+                count = resp.get("total", 0)
+            except Exception:
+                count = 0
         manager_workloads.append((mgr, count))
 
-    # 3. Pick the manager with the fewest active complaints
     best_manager = min(manager_workloads, key=lambda x: x[1])[0]
     return best_manager
+
+def update_manager_workload(manager_id: str, delta: int):
+    """Safely updates the activeComplaints count for a manager. Fail-safe."""
+    try:
+        if not manager_id or manager_id == "SYSTEM" or manager_id.startswith("MGR-UNK"):
+            return
+        mgr_doc = databases.get_document(DATABASE_ID, MANAGERS_COLLECTION_ID, manager_id)
+        current_count = mgr_doc.get("activeComplaints") or 0
+        new_count = max(0, current_count + delta)
+        databases.update_document(DATABASE_ID, MANAGERS_COLLECTION_ID, manager_id, {
+            "activeComplaints": new_count
+        })
+    except Exception as e:
+        print(f"WORKLOAD_UPDATE_ERROR for {manager_id}: {e}")
 
 
 # ── Business Logic ─────────────────────────────────────────────────────────────
@@ -91,16 +121,20 @@ def _resolve_state_from_address(addr: dict) -> str:
     return "Unknown"
 
 
-def get_state_from_coords(lat: float, lng: float) -> str:
-    """Reverse geocodes coordinates to find the State."""
+@lru_cache(maxsize=1024)
+def _cached_reverse_geocode(lat_round: float, lng_round: float) -> str:
+    """Cached geocoding with precision handling to minimize external calls."""
     try:
-        location = geolocator.reverse((lat, lng), exactly_one=True, timeout=10)
+        location = geolocator.reverse((lat_round, lng_round), exactly_one=True, timeout=10)
         if location and "address" in location.raw:
             return _resolve_state_from_address(location.raw["address"])
     except Exception:
         pass
     return "Unknown"
 
+def get_state_from_coords(lat: float, lng: float) -> str:
+    """Reverse geocodes coordinates to find the State. Cached to ~111m precision."""
+    return _cached_reverse_geocode(round(lat, 3), round(lng, 3))
 
 def get_state_from_address_text(address: str) -> str:
     """Extracts state from a free-text address string (used when no GPS coords)."""
@@ -189,6 +223,8 @@ class StatusUpdate(BaseModel):
     actor: Optional[str] = "System"
     assignedTo: Optional[str] = None
     photoUrl: Optional[str] = None
+    rating: Optional[float] = None
+    feedback: Optional[str] = None
 
 
 class AssignManager(BaseModel):
@@ -208,11 +244,14 @@ async def list_complaints(
     lng: Optional[float] = None,
     radius: Optional[float] = 5.0,  # default 5km radius
     managerId: Optional[str] = None,
+    assignedTo: Optional[str] = None,
 ):
     try:
         queries = [Query.order_desc("createdAt"), Query.limit(100)]
         if managerId:
             queries.append(Query.equal("assignedManagerId", managerId))
+        if assignedTo:
+            queries.append(Query.equal("assignedTo", assignedTo))
 
         resp = databases.list_documents(DATABASE_ID, COLLECTION_ID, queries=queries)
         complaints = [_map_doc(d) for d in resp["documents"]]
@@ -240,7 +279,11 @@ async def list_complaints(
 @router.get("/managers")
 async def get_managers():
     """Returns the list of all available managers."""
-    return MOCK_MANAGERS
+    try:
+        resp = databases.list_documents(DATABASE_ID, MANAGERS_COLLECTION_ID, queries=[Query.limit(100)])
+        return [{"id": d["$id"], "name": d["name"], "state": d["state"]} for d in resp["documents"]]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("", status_code=201)
@@ -248,6 +291,7 @@ async def create_complaint(body: ComplaintCreate):
     try:
         now = datetime.now(UTC).isoformat()
         sla_hours = get_sla_hours(body.category)
+        sla_deadline = (datetime.now(UTC) + timedelta(hours=sla_hours)).isoformat()
         priority = calculate_priority(body.category)
         timeline = json.dumps([{
             "status": "Submitted", "timestamp": now,
@@ -289,6 +333,7 @@ async def create_complaint(body: ComplaintCreate):
             "priorityScore": float(priority),
             "slaHours": int(sla_hours),
             "slaRemainingHours": int(sla_hours),
+            "slaDeadline": sla_deadline,
             "coordinates": json.dumps(body.coordinates) if body.coordinates else None,
             "photos": json.dumps(body.photos) if body.photos else "[]",
             "state": state,
@@ -296,6 +341,11 @@ async def create_complaint(body: ComplaintCreate):
             "assignedManagerName": assigned_manager["name"],
         }
         doc = databases.create_document(DATABASE_ID, COLLECTION_ID, "unique()", payload)
+        
+        # Increment manager workload tracking
+        if doc.get("status") not in ("Resolved", "Closed"):
+            update_manager_workload(assigned_manager["id"], 1)
+
         return {"id": doc["$id"], "assignedManager": assigned_manager["name"]}
     except HTTPException:
         raise
@@ -331,16 +381,56 @@ async def get_complaint(complaint_id: str):
         raise HTTPException(status_code=404, detail="Complaint not found")
 
 
+def _update_worker_rating(worker_name: str, new_rating: float):
+    """Updates the worker's average rating based on the new rating."""
+    try:
+        # 1. Find the worker by name
+        resp = databases.list_documents(
+            DATABASE_ID, WORKERS_COLLECTION_ID,
+            queries=[Query.equal("name", worker_name), Query.limit(1)]
+        )
+        if not resp.get("documents"):
+            print(f"WORKER_NOT_FOUND_FOR_RATING: {worker_name}")
+            return
+        
+        worker_doc = resp["documents"][0]
+        worker_id = worker_doc["$id"]
+        
+        # 2. Calculate new average
+        current_rating = worker_doc.get("rating") or 0.0
+        current_count = worker_doc.get("ratingCount") or 0
+        
+        new_count = current_count + 1
+        new_average = ((current_rating * current_count) + new_rating) / new_count
+        new_average = round(new_average, 2)
+        
+        # 3. Update worker document
+        databases.update_document(DATABASE_ID, WORKERS_COLLECTION_ID, worker_id, {
+            "rating": new_average,
+            "ratingCount": new_count
+        })
+        print(f"WORKER_RATING_UPDATED: {worker_name} ({new_average} based on {new_count} ratings)")
+    except Exception as e:
+        print(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
+
+
 @router.patch("/{complaint_id}/status")
 async def update_status(complaint_id: str, body: StatusUpdate):
     try:
         doc = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
-        timeline = doc.get("timeline", "[]")
-        if isinstance(timeline, str):
+        
+        timeline = doc.get("timeline")
+        if timeline is None:
+            timeline = []
+        elif isinstance(timeline, str):
             try:
                 timeline = json.loads(timeline)
             except Exception:
                 timeline = []
+        
+        if not isinstance(timeline, list):
+            timeline = []
+
         timeline.append({
             "status": body.status,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -361,13 +451,32 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if body.photoUrl:
             update_payload["photoUrl"] = body.photoUrl
         
+        if body.rating is not None:
+            update_payload["rating"] = body.rating
+        
+        if body.feedback:
+            update_payload["feedback"] = body.feedback
+        
         databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, update_payload)
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
+
+        # Workload tracking: Handle resolution/closure decrement
+        old_status = doc.get("status")
+        if old_status not in ("Resolved", "Closed") and body.status in ("Resolved", "Closed"):
+            update_manager_workload(doc.get("assignedManagerId"), -1)
+            
+        # Rating update: If closing with a rating, update the worker's rating
+        if body.status == "Closed" and body.rating is not None:
+            worker_name = doc.get("assignedTo")
+            if worker_name:
+                _update_worker_rating(worker_name, body.rating)
+            
         return _map_doc(updated)
     except HTTPException:
         raise
     except Exception as e:
-        print(f"STATUS_UPDATE_ERROR: {str(e)}")
+        import traceback
+        print(f"STATUS_UPDATE_ERROR: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -394,9 +503,11 @@ async def update_share_card(complaint_id: str, body: ShareCardUpdate):
 async def assign_manager(complaint_id: str, body: AssignManager):
     """Assign a complaint to a specific manager."""
     try:
-        # Validate manager exists
-        manager = next((m for m in MOCK_MANAGERS if m["id"] == body.managerId), None)
-        if not manager:
+        # Validate manager exists in DB
+        try:
+            mgr_doc = databases.get_document(DATABASE_ID, MANAGERS_COLLECTION_ID, body.managerId)
+            manager = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
+        except Exception:
             raise HTTPException(status_code=400, detail="Manager not found")
         
         doc = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
@@ -422,6 +533,14 @@ async def assign_manager(complaint_id: str, body: AssignManager):
             "timeline": json.dumps(timeline),
             "updatedAt": datetime.now(UTC).isoformat(),
         })
+        
+        # Workload tracking: transfer load if not resolved
+        if doc.get("status") not in ("Resolved", "Closed"):
+            old_manager_id = doc.get("assignedManagerId")
+            new_manager_id = body.managerId
+            if old_manager_id != new_manager_id:
+                update_manager_workload(old_manager_id, -1)
+                update_manager_workload(new_manager_id, 1)
         
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
         return _map_doc(updated)

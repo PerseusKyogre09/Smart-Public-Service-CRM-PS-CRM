@@ -14,6 +14,8 @@ import {
 import { account } from "../../appwrite";
 import { motion, AnimatePresence } from "motion/react";
 
+import CivicAIAssistant from "../dashboard/CivicAIAssistant";
+
 export default function WorkerLayout() {
   const navigate = useNavigate();
   const [worker, setWorker] = useState<any>(null);
@@ -171,6 +173,8 @@ export default function WorkerLayout() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
+
+      <CivicAIAssistant type="worker" />
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 mt-auto">

@@ -1,3 +1,4 @@
+import os
 import asyncio
 import httpx
 from fastapi import FastAPI
@@ -7,6 +8,8 @@ from routes.stats import router as stats_router
 from routes.uploads import router as uploads_router
 from routes.leaderboard import router as leaderboard_router
 from routes.users import router as users_router
+from routes.ai import router as ai_router
+from routes.workers import router as workers_router
 import threading
 from cron_job import setup_cron
 
@@ -15,7 +18,7 @@ app = FastAPI(title="CivicPulse Delhi Backend", version="1.0.0")
 # Keep-Alive Background Task for Render Free Tier
 async def keep_alive():
     """Pings the server every 5 minutes to prevent Render from sleeping."""
-    url = "https://smart-public-service-crm-ps-crm.onrender.com/health"
+    url = os.getenv("RENDER_URL", "http://localhost:8000") + "/health"
     await asyncio.sleep(60)  # Wait for startup
     async with httpx.AsyncClient() as client:
         while True:
@@ -55,6 +58,8 @@ app.include_router(stats_router)
 app.include_router(uploads_router)
 app.include_router(leaderboard_router)
 app.include_router(users_router)
+app.include_router(ai_router)
+app.include_router(workers_router)
 
 
 @app.get("/health")
