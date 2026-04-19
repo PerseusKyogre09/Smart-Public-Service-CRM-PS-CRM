@@ -1,100 +1,101 @@
-# 🌆 CivicPulse Delhi: Smart Public Service CRM (PS-CRM)
+# CivicPulse Delhi: Smart Public Service CRM (PS-CRM)
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
 [![Appwrite](https://img.shields.io/badge/Backend_as_a_Service-Appwrite-f02e65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io)
 [![Tailwind CSS](https://img.shields.io/badge/UI-Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-**CivicPulse Delhi** is a next-generation civic engagement platform designed for the Government of NCT of Delhi to empower citizens to report, track, and verify public infrastructure issues in real-time. Built for speed, transparency, and accountability, it bridges the gap between the public and urban management.
+CivicPulse Delhi is a civic engagement platform designed for the Government of NCT of Delhi. It enables citizens to report and track civic issues, while departments manage assignment, SLA monitoring, and closure evidence in a transparent workflow.
 
 ---
 
-## 🏗️ Multi-Portal Ecosystem
+## Multi-Portal Ecosystem
 
-### 👨‍💼 Citizen Portal
+### Citizen Portal
+
 _Empowering Delhi's community action through engagement._
 
-- **📍 Smart Reporting**: Report issues (potholes, garbage, etc.) within Delhi NCR with GPS auto-detection and AI-assisted category suggestions.
-- **🗺️ Interactive Map**: View nearby issues in your ward, status updates, and community verifications in real-time.
-- **🏆 Civic Credits**: Earn reputation points for verified reports and successful resolutions.
-- **📈 Personal Dashboard**: Track your contribution history and follow the lifecycle of your complaints.
+- Smart reporting with location selection and AI-assisted category suggestion.
+- Interactive map to view nearby issues and track status.
+- Reputation-oriented participation based on verified complaint outcomes.
+- Personal dashboard with complaint lifecycle visibility.
 
-### 🛡️ Admin Portal
+### Admin Portal
 
 _High-level oversight and system-wide management._
 
-- **📊 Global Analytics**: Monitor MTTR (Mean Time to Resolution) and overall SLA compliance across all wards.
-- **👥 User Management**: Manage user accounts, monitor reputation trends, and moderate reported content.
-- **📥 Unified Queue**: Global inbox to filter, search, and oversee every complaint in the system.
-- **⚙️ SLA Configuration**: Define and adjust resolution timelines based on issue categories.
+- Global analytics for SLA compliance and resolution trends.
+- User management and complaint oversight.
+- Unified queue for filtering and operational monitoring.
+- SLA configuration workflows.
 
-### 📂 Manager Portal
+### Manager Portal
 
 _Regional operations and workflow optimization._
 
-- **📍 Jurisdiction Overview**: Real-time monitoring of active complaints within specific states or regions.
-- **👷 Worker Assignment**: Intelligent task routing to field officers based on location and current workload.
-- **📈 Team Performance**: Track worker efficiency and regional resolution metrics.
-- **🔄 Automated Routing**: Backend-driven logic for seamless transition from "Verified" to "Assigned".
+- Jurisdiction-focused complaint monitoring.
+- Worker assignment and reassignment controls.
+- Team performance visibility for area operations.
+- Backend-driven routing transitions.
 
-### 👷 Worker Portal
+### Worker Portal
 
 _Field execution and resolution verification._
 
-- **📋 Task Dashboard**: Mobile-optimized list of assigned tasks sorted by SLA urgency.
-- **✅ Status Updates**: Direct updates from "En Route" to "Resolved" with field-level clarity.
-- **📸 GPS-Locked Proof**: Resolution photos can only be uploaded within 150m of the GPS pin for total transparency.
-- **🛠️ Service History**: Log of completed tasks and impact on community infrastructure.
+- SLA-prioritized task dashboard.
+- Structured status updates from assignment to resolution.
+- GPS-locked proof upload for transparent closure evidence.
+- Service history tracking.
 
 ---
 
-## ✨ Key Technical Features
+## Key Technical Features
 
-- **🖼️ AI Smart-Snap**: Automated image-based category classification for faster reporting.
-- **⏱️ SLA Tracking**: Real-time countdowns with automated escalation triggers for overdue tasks.
-- **🔗 Graded Trust Auth**: Phased authentication levels and reward models for verified users.
-- **📊 Real-time Synchronization**: Powered by Appwrite for instant updates across all portals.
-
----
-
-## 🏗️ Architecture
-
-- **Frontend**: React 18, Vite, Tailwind CSS (v4), Lucide Icons, Framer Motion.
-- **Backend**: FastAPI (Python 3.10+), Pydantic.
-- **Database/Infrastructure**: Appwrite (Auth, Databases, Storage, Real-time).
+- AI-assisted category suggestion (Smart-Snap).
+- SLA tracking with escalation-oriented workflow.
+- Role-based access across citizen, admin, manager, and worker flows.
+- Appwrite-backed data and storage integrations.
 
 ---
 
-## 📁 Project Structure
+## Architecture
 
-| Path        | Purpose                                                                          |
-| ----------- | -------------------------------------------------------------------------------- |
-| `backend/`  | 🐍 FastAPI Application (Business Logic & AI Endpoints)                           |
-| `frontend/` | ⚛️ React Multi-Portal Application (Vite + Tailwind)                              |
-| `docs/`     | 📝 Comprehensive [PRD](docs/PRD.md) and [Feature Guides](docs/Final_features.md) |
+- Frontend: React 18, Vite, Tailwind CSS v4.
+- Backend: FastAPI, Pydantic.
+- Infrastructure: Appwrite (Auth, Databases, Storage).
 
 ---
 
-## 📜 Portals Quick Reference
+## Project Structure
 
-| Portal      | Primary User      | Key Goal                       |
-| ----------- | ----------------- | ------------------------------ |
-| **Citizen** | General Public    | Report & Track Issues          |
-| **Admin**   | System Admins     | Global Monitoring & Settings   |
-| **Manager** | Regional Managers | Task Routing & Supervision     |
-| **Worker**  | Field Officers    | Task Resolution & Verification |
+| Path      | Purpose                                  |
+| --------- | ---------------------------------------- |
+| backend/  | FastAPI application and API routes       |
+| frontend/ | React multi-portal application           |
+| docs/     | Product and implementation documentation |
 
 ---
 
-## 🚀 Quick Start
+## Portals Quick Reference
 
-### 📋 Prerequisites
+| Portal  | Primary User      | Key Goal                      |
+| ------- | ----------------- | ----------------------------- |
+| Citizen | General Public    | Report and track issues       |
+| Admin   | System Admins     | Monitor performance and queue |
+| Manager | Regional Managers | Route and supervise tasks     |
+| Worker  | Field Officers    | Resolve tasks with proof      |
 
-- **Python 3.10+**
-- **Node.js 18+**
-- An **Appwrite** Project ([Create one for free](https://cloud.appwrite.io))
+---
 
-### 1️⃣ Clone & Install
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+- Appwrite project
+
+### 1) Clone and Install
 
 ```bash
 git clone https://github.com/Nehul1605/Smart-Public-Service-CRM-PS-CRM
@@ -110,30 +111,36 @@ cd frontend
 npm install
 ```
 
-### 2️⃣ Environment Configuration
+### 2) Environment Configuration
 
-Create a `.env` file in `backend/` and a `.env.local` in `frontend/`.
+Create backend and frontend environment files.
 
-**Backend `.env`:**
+Backend file: backend/.env
 
 ```env
 APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-APPWRITE_PROJECT_ID=your_id
-APPWRITE_API_KEY=your_secret_key
-# These can be default/demo values if using local setup scripts
-APPWRITE_DATABASE_ID=civicpulse_db
+APPWRITE_PROJECT_ID=your_project_id
+APPWRITE_API_KEY=your_server_api_key
+APPWRITE_DATABASE_ID=your_database_id
 APPWRITE_COLLECTION_ID=complaints
+APPWRITE_BUCKET_ID=your_bucket_id
+GROQ_API_KEY=your_groq_api_key
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email
+SMTP_PASS=your_app_password
+ADMIN_EMAIL=your_admin_email
 ```
 
-**Frontend `.env.local`:**
+Frontend file: frontend/.env.local
 
 ```env
 VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-VITE_APPWRITE_PROJECT_ID=your_id
+VITE_APPWRITE_PROJECT_ID=your_project_id
 VITE_API_URL=http://localhost:8000
 ```
 
-### 3️⃣ Run Locally
+### 3) Run Locally
 
 **Terminal 1 (Backend):**
 
@@ -149,6 +156,20 @@ cd frontend
 npm run dev
 ```
 
+Frontend runs at http://localhost:5173 and backend runs at http://localhost:8000.
+
+## Documentation
+
+- Product Requirements: [docs/PRD.md](docs/PRD.md)
+- Feature Scope: [docs/Final_features.md](docs/Final_features.md)
+- Docker and local run notes: [docs/docker.md](docs/docker.md)
+
+## Security Notes
+
+- Never commit real secrets in backend/.env or frontend/.env.local.
+- Use backend/.env.example as the template for local setup.
+- Rotate API keys and app passwords before any public demo.
+
 ---
 
 ## License
@@ -157,4 +178,4 @@ This project is licensed under the MIT License.
 
 ---
 
-_Created with ❤️ for smarter cities._
+Created for civic transparency and service accountability.

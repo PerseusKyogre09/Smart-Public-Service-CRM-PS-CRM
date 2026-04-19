@@ -1,6 +1,12 @@
 # Demo Login Credentials
 
-This file lists the current demo credentials configured in the project.
+This file lists demo credentials for local testing only.
+
+## Security Notice
+
+- These credentials are not for production use.
+- Do not publish real passwords, API keys, or app secrets in this file.
+- Replace all demo credentials before external deployment or official review.
 
 ## Admin Access
 
@@ -10,7 +16,7 @@ This file lists the current demo credentials configured in the project.
 
 ## Manager Access
 
-Manager password format is based on first name:
+Manager password format is based on first name for demo mode:
 
 - Password format: first_name_in_lowercase@123
 - Example: Sanjay Sharma -> sanjay@123
@@ -43,3 +49,4 @@ Note: All worker accounts currently use the same demo password.
 - Replace hardcoded demo credentials with secure identity provider integration.
 - Move role enforcement fully to backend-issued roles and claims.
 - Rotate all credentials before any public deployment.
+- Store credentials through environment variables or a secrets manager.
