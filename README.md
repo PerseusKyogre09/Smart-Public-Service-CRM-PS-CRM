@@ -2,90 +2,84 @@
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
-[![Appwrite](https://img.shields.io/badge/Backend_as_a_Service-Appwrite-f02e65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io)
+[![Appwrite](https://img.shields.io/badge/BaaS-Appwrite-f02e65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io)
 [![Tailwind CSS](https://img.shields.io/badge/UI-Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-CivicPulse Delhi is a civic engagement platform designed for the Government of NCT of Delhi. It enables citizens to report and track civic issues, while departments manage assignment, SLA monitoring, and closure evidence in a transparent workflow.
+CivicPulse Delhi is a multi-portal civic grievance platform for transparent issue reporting, assignment, SLA tracking, and proof-based resolution across citizen, admin, manager, and worker flows.
 
----
+## What's New In This Build
 
-## Multi-Portal Ecosystem
+- Multi-role portal routing with protected role-based access.
+- AI assistant endpoints for citizen, manager, and worker guidance.
+- Smart worker recommendation endpoint for assignment support.
+- Priority scoring and SLA-by-category logic integrated in complaint workflows.
+- Manager workload-aware assignment flow (least active complaints strategy).
+- Admin queue with SLA-risk and priority visibility.
+- Admin analytics module with Delhi zone heatmap and operational KPI views.
+- Leaderboard APIs with impact scoring and verification-based points.
+- Worker APIs with active task counts derived from live complaint status.
+
+## Multi-Portal Feature Snapshot
 
 ### Citizen Portal
 
-_Empowering Delhi's community action through engagement._
-
-- Smart reporting with location selection and AI-assisted category suggestion.
-- Interactive map to view nearby issues and track status.
-- Reputation-oriented participation based on verified complaint outcomes.
-- Personal dashboard with complaint lifecycle visibility.
+- Report issue with category, description, location, and media.
+- Personal complaint history and complaint detail timeline.
+- Escalation and feedback flow on complaint lifecycle.
+- Community leaderboard participation.
 
 ### Admin Portal
 
-_High-level oversight and system-wide management._
-
-- Global analytics for SLA compliance and resolution trends.
-- User management and complaint oversight.
-- Unified queue for filtering and operational monitoring.
-- SLA configuration workflows.
+- Admin overview for operations monitoring.
+- Queue operations with filtering, priority, and SLA context.
+- Analytics and heatmap view for city-level trend analysis.
+- SLA management, user management, and manager operations screens.
 
 ### Manager Portal
 
-_Regional operations and workflow optimization._
-
-- Jurisdiction-focused complaint monitoring.
-- Worker assignment and reassignment controls.
-- Team performance visibility for area operations.
-- Backend-driven routing transitions.
+- Manager-level complaint monitoring and action dashboard.
+- Worker management and assignment controls.
+- Priority-aware complaint decision support.
 
 ### Worker Portal
 
-_Field execution and resolution verification._
+- Worker task dashboard and resolved work history views.
+- Profile and workflow status update screens.
+- Resolution execution flow aligned with proof-based closure model.
 
-- SLA-prioritized task dashboard.
-- Structured status updates from assignment to resolution.
-- GPS-locked proof upload for transparent closure evidence.
-- Service history tracking.
+## Core Implementation Highlights
 
----
+- Complaint APIs include listing, creation, assignment, status updates, and share-card update support.
+- Location handling includes reverse geocoding and address-based state extraction safeguards.
+- SLA matrix and category-priority scoring are centralized in backend complaint logic.
+- AI chat and assignment intelligence are exposed under dedicated backend routes.
+- Leaderboard scoring includes reporter impact and verification contributions.
+- Keep-alive and scheduled background jobs are started with backend app startup.
 
-## Key Technical Features
+## Tech Stack
 
-- AI-assisted category suggestion (Smart-Snap).
-- SLA tracking with escalation-oriented workflow.
-- Role-based access across citizen, admin, manager, and worker flows.
-- Appwrite-backed data and storage integrations.
-
----
-
-## Architecture
-
-- Frontend: React 18, Vite, Tailwind CSS v4.
-- Backend: FastAPI, Pydantic.
-- Infrastructure: Appwrite (Auth, Databases, Storage).
-
----
+- Frontend: React 18, Vite, TypeScript, Tailwind CSS.
+- Backend: FastAPI, Pydantic, Appwrite Python SDK.
+- AI Integration: Groq chat completion APIs.
+- Data/Storage: Appwrite Databases and Storage.
 
 ## Project Structure
 
-| Path      | Purpose                                  |
-| --------- | ---------------------------------------- |
-| backend/  | FastAPI application and API routes       |
-| frontend/ | React multi-portal application           |
-| docs/     | Product and implementation documentation |
+| Path      | Purpose                                        |
+| --------- | ---------------------------------------------- |
+| backend/  | FastAPI app, domain routes, cron setup         |
+| frontend/ | React multi-portal UI and routing              |
+| docs/     | PRD, final feature scope, presentation support |
 
----
+## API Modules (Backend)
 
-## Portals Quick Reference
-
-| Portal  | Primary User      | Key Goal                      |
-| ------- | ----------------- | ----------------------------- |
-| Citizen | General Public    | Report and track issues       |
-| Admin   | System Admins     | Monitor performance and queue |
-| Manager | Regional Managers | Route and supervise tasks     |
-| Worker  | Field Officers    | Resolve tasks with proof      |
-
----
+- /api/complaints
+- /api/ai
+- /api/workers
+- /api/leaderboard
+- /api/stats
+- /api/users
+- /api/uploads
 
 ## Quick Start
 
@@ -95,27 +89,25 @@ _Field execution and resolution verification._
 - Node.js 18+
 - Appwrite project
 
-### 1) Clone and Install
+### 1) Clone and install
 
 ```bash
 git clone https://github.com/Nehul1605/Smart-Public-Service-CRM-PS-CRM
 cd Smart-Public-Service-CRM-PS-CRM
 
-# Setup Backend
+# Backend setup
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r backend/requirements.txt
 
-# Setup Frontend
+# Frontend setup
 cd frontend
 npm install
 ```
 
-### 2) Environment Configuration
+### 2) Configure environment
 
-Create backend and frontend environment files.
-
-Backend file: backend/.env
+Backend: create backend/.env
 
 ```env
 APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
@@ -132,50 +124,52 @@ SMTP_PASS=your_app_password
 ADMIN_EMAIL=your_admin_email
 ```
 
-Frontend file: frontend/.env.local
+Frontend: create frontend/.env.local
 
 ```env
 VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 VITE_APPWRITE_PROJECT_ID=your_project_id
+VITE_APPWRITE_DATABASE_ID=your_database_id
+VITE_APPWRITE_COMPLAINTS_COLLECTION_ID=complaints
+VITE_APPWRITE_BUCKET_ID=your_bucket_id
 VITE_API_URL=http://localhost:8000
+VITE_RENDER_API_URL=https://smart-public-service-crm-ps-crm.onrender.com
 ```
 
-### 3) Run Locally
+### 3) Run locally
 
-**Terminal 1 (Backend):**
+Terminal 1:
 
 ```bash
 cd backend
 python main.py
 ```
 
-**Terminal 2 (Frontend):**
+Terminal 2:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Frontend runs at http://localhost:5173 and backend runs at http://localhost:8000.
+- Frontend: http://localhost:5173
+- Backend: http://localhost:8000
+- Health check: http://localhost:8000/health
 
-## Documentation
+## Final Submission Docs
 
-- Product Requirements: [docs/PRD.md](docs/PRD.md)
-- Feature Scope: [docs/Final_features.md](docs/Final_features.md)
-- Docker and local run notes: [docs/docker.md](docs/docker.md)
+- Product requirements: [docs/PRD.md](docs/PRD.md)
+- Final feature scope: [docs/Final_features.md](docs/Final_features.md)
+- PPT slide content (ready-to-use): [docs/Final_Submission_PPT.md](docs/Final_Submission_PPT.md)
 
 ## Security Notes
 
-- Never commit real secrets in backend/.env or frontend/.env.local.
-- Use backend/.env.example as the template for local setup.
-- Rotate API keys and app passwords before any public demo.
-
----
+- Never commit real secrets in env files.
+- Rotate keys before external demos.
+- Use demo/test credentials only for hackathon submissions.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT
 
----
-
-Created for civic transparency and service accountability.
+Built for civic transparency, accountability, and faster public service delivery.
