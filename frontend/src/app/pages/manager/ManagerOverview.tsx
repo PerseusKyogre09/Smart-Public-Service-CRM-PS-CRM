@@ -145,8 +145,13 @@ export default function ManagerOverview() {
     ];
   }, [complaints]);
 
-  // Workers assigned to this manager's state
-  const stateWorkers = useMemo(() => workers, [workers]);
+  // Workers assigned to this manager's state, filtered by their managed areas
+  const stateWorkers = useMemo(() => {
+    if (!manager || !manager.managedAreas) return workers;
+    return workers.filter((worker) =>
+      manager.managedAreas.includes(worker.area)
+    );
+  }, [workers, manager]);
 
   // Auto-assignment logic - smart worker selection
   const autoAssignWorker = (complaint: Complaint): Worker | null => {
