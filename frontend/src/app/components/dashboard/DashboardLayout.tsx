@@ -9,7 +9,6 @@ const navItems = [
   { to: "/dashboard", label: "Home", end: true },
   { to: "/dashboard/report", label: "Report Issue" },
   { to: "/dashboard/complaints", label: "My Complaints" },
-  { to: "/dashboard/leaderboard", label: "Leaderboard" },
   { to: "/dashboard/profile", label: "Profile" },
 ];
 
@@ -57,16 +56,15 @@ export default function DashboardLayout() {
     } catch (_) {
       try {
         await account.deleteSession("current");
-      } catch (_) {}
+      } catch (_) { }
     }
     navigate("/login");
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-full px-4 py-2 text-sm font-medium transition ${
-      isActive
-        ? "bg-sky-700 text-white"
-        : "text-slate-600 hover:bg-sky-50 hover:text-sky-700"
+    `rounded-full px-4 py-2 text-sm font-medium transition ${isActive
+      ? "bg-sky-700 text-white"
+      : "text-slate-600 hover:bg-sky-50 hover:text-sky-700"
     }`;
 
   return (
@@ -163,10 +161,9 @@ export default function DashboardLayout() {
                   end={item.end}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
-                    `block rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                      isActive
-                        ? "bg-sky-700 text-white"
-                        : "bg-slate-50 text-slate-700 hover:bg-sky-50 hover:text-sky-700"
+                    `block rounded-2xl px-4 py-3 text-sm font-medium transition ${isActive
+                      ? "bg-sky-700 text-white"
+                      : "bg-slate-50 text-slate-700 hover:bg-sky-50 hover:text-sky-700"
                     }`
                   }
                 >

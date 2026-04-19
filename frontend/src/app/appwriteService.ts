@@ -167,21 +167,12 @@ export const appwriteService = {
     return api.get<any[]>("/api/stats/wards");
   },
 
-  async getLeaderboard(
-    tab: "National" | "District" | "Local" = "National",
-  ): Promise<any[]> {
-    return api.get<any[]>(`/api/leaderboard?tab=${tab}`);
-  },
-
-  async getLeaderboardSummary(): Promise<{
-    totalResolved: number;
-    activeCitizens: number;
-  }> {
-    return api.get("/api/leaderboard/summary");
-  },
-
   async getAllUsers(): Promise<any[]> {
     return api.get<any[]>("/api/users");
+  },
+
+  async getUserProfileStats(userId: string): Promise<any> {
+    return api.get<any>(`/api/users/${userId}`);
   },
 
   async getWorkers(state?: string): Promise<any[]> {

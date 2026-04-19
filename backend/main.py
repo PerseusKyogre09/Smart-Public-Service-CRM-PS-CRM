@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.complaints import router as complaints_router
 from routes.stats import router as stats_router
 from routes.uploads import router as uploads_router
-from routes.leaderboard import router as leaderboard_router
 from routes.users import router as users_router
 from routes.ai import router as ai_router
 from routes.workers import router as workers_router
@@ -56,7 +55,6 @@ app.add_middleware(
 app.include_router(complaints_router)
 app.include_router(stats_router)
 app.include_router(uploads_router)
-app.include_router(leaderboard_router)
 app.include_router(users_router)
 app.include_router(ai_router)
 app.include_router(workers_router)
