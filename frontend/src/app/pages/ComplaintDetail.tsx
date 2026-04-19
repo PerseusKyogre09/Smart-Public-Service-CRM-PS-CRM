@@ -119,6 +119,16 @@ export default function ComplaintDetail() {
     (complaint.reporterId === currentUser.$id ||
       complaint.userId === currentUser.$id);
 
+  const isAlreadyRated = !!complaint.rating;
+
+  const showRatingSection =
+    isReporter &&
+    ["Resolved", "Closed"].includes(complaint.status) &&
+    !isAlreadyRated;
+
+  const showDeclineOption =
+    isReporter && complaint.status === "Resolved";
+
   const isManager =
     currentUser && sessionStorage.getItem("managerData") !== null;
 
@@ -727,21 +737,17 @@ export default function ComplaintDetail() {
                   Escalate Complaint
                 </button>
               )}
-              {complaint.status === "Resolved" && isReporter && (
+              {showDeclineOption && (
                 <button
                   onClick={() => setShowDeclineModal(true)}
                   disabled={isSubmittingRating}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 hover:bg-rose-100 disabled:bg-slate-50 text-rose-700 text-sm font-[600] rounded-xl border border-rose-100 transition-colors disabled:cursor-not-allowed shadow-sm"
                 >
                   <AlertCircle className="w-4 h-4" />
-                  {isSubmittingRating ? "Processing..." : "Decline Resolution & Re-open"}
+                  {isSubmittingRating ? "Processing..." : "Decline Resolution"}
                 </button>
               )}
-              {canReopen && complaint.status === "Closed" && (
-                <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-[600] rounded-xl border border-amber-100 transition-colors">
-                  Re-open Complaint (7 days)
-                </button>
-              )}
+              {/* The user wants the Re-open button to disappear when closed */}
               {isManager && complaint.status === "Resolved" && (
                 <button
                   onClick={handleCloseComplaint}
@@ -915,46 +921,123 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
-      {/* Rating (only for resolved/closed) */}
-      {["Resolved", "Closed"].includes(complaint.status) && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <h3 className="text-base font-[700] text-slate-900 mb-4">
-            Rate the Resolution
-          </h3>
-          <div className="flex gap-2 mb-4">
-            {[1, 2, 3, 4, 5].map((n) => (
+      {/* Premium Rating Section */}
+      {showRatingSection && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden bg-white/80 backdrop-blur-xl rounded-[2rem] border border-orange-100 shadow-2xl p-8"
+        >
+          {/* Background Decoration */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -ml-16 -mb-16" />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
+                <Star className="w-6 h-6 text-orange-600 fill-orange-200" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                  Rate the Resolution
+                </h3>
+                <p className="text-sm text-slate-500 font-medium">
+                  How satisfied are you with the service?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 mb-8">
+              {[1, 2, 3, 4, 5].map((n) => {
+                const labels = ["Terrible", "Poor", "Okay", "Good", "Fantastic!"];
+                const colors = ["text-red-400", "text-orange-400", "text-amber-400", "text-lime-500", "text-emerald-500"];
+                const active = n <= rating;
+
+                return (
+                  <motion.button
+                    key={n}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setRating(n)}
+                    className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-300 ${active ? "bg-orange-50 shadow-sm border-orange-100" : "bg-slate-50 border-transparent hover:bg-slate-100"
+                      } border`}
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-all duration-300 ${active ? "fill-orange-400 text-orange-400" : "text-slate-300 group-hover:text-slate-400"
+                        }`}
+                    />
+                    {active && rating === n && (
+                      <motion.span
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`text-[10px] font-black uppercase tracking-widest ${colors[n - 1]}`}
+                      >
+                        {labels[n - 1]}
+                      </motion.span>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            <div className="relative group">
+              <MessageSquare className="absolute left-4 top-4 w-4 h-4 text-slate-300 group-focus-within:text-orange-400 transition-colors" />
+              <textarea
+                placeholder="Share your experience (optional)..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+                className="w-full pl-12 pr-4 py-4 text-sm font-medium border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-50 focus:border-orange-200 resize-none bg-slate-50 transition-all"
+              />
+            </div>
+
+            <div className="flex gap-4 mt-8">
               <button
-                key={n}
-                onClick={() => setRating(n)}
-                className="transition-transform hover:scale-110"
+                onClick={handleSubmitRating}
+                disabled={isSubmittingRating}
+                className="flex-1 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:from-slate-300 disabled:to-slate-400 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-orange-200 active:scale-[0.98] disabled:cursor-not-allowed"
               >
-                <Star
-                  className={`w-8 h-8 ${n <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
-                />
+                {isSubmittingRating ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Submitting...</span>
+                  </div>
+                ) : (
+                  "Submit Feedback"
+                )}
               </button>
+              <button className="flex items-center gap-2 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-2xl transition-all active:scale-[0.98]">
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Already Rated Feedback Display */}
+      {isAlreadyRated && isReporter && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-emerald-50/50 backdrop-blur-sm rounded-[2rem] border border-emerald-100 p-8 flex flex-col items-center text-center"
+        >
+          <div className="w-16 h-16 bg-emerald-100 rounded-[1.5rem] flex items-center justify-center mb-4">
+            <CheckCircle className="w-8 h-8 text-emerald-600" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-1">Feedback Submitted</h3>
+          <p className="text-sm text-slate-500 font-medium mb-6">Thank you for helping us improve!</p>
+          <div className="flex gap-1 mb-4">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star key={n} className={`w-5 h-5 ${n <= (complaint.rating || 0) ? "fill-emerald-500 text-emerald-500" : "text-emerald-200"}`} />
             ))}
           </div>
-          <textarea
-            placeholder="Share your experience (optional)..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={3}
-            className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-orange-400 resize-none bg-slate-50"
-          />
-          <div className="flex gap-3 mt-3">
-            <button
-              onClick={handleSubmitRating}
-              disabled={isSubmittingRating}
-              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm font-[600] rounded-xl transition-colors disabled:cursor-not-allowed"
-            >
-              {isSubmittingRating ? "Submitting..." : "Submit Rating"}
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-[500] rounded-xl transition-colors">
-              <Share2 className="w-4 h-4" />
-              Share Before/After Card
-            </button>
-          </div>
-        </div>
+          {complaint.feedback && (
+            <p className="text-sm text-emerald-800 font-bold italic bg-white/60 px-6 py-3 rounded-2xl border border-emerald-100">
+              "{complaint.feedback}"
+            </p>
+          )}
+        </motion.div>
       )}
 
       {/* Reassign Complaint Modal */}
