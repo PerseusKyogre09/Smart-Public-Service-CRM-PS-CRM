@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     portal_type: str = "citizen" # citizen, manager, worker
     history: Optional[List[dict]] = []
     language: Optional[str] = "English"
+    page_context: Optional[str] = None
 
 class WorkerSummary(BaseModel):
     id: str
@@ -71,6 +72,9 @@ async def chat_with_ai(request: ChatRequest):
 
     system_content = SYSTEM_PROMPTS.get(request.portal_type, SYSTEM_PROMPTS["citizen"])
     
+    if request.page_context:
+        system_content += f"\n\nCURRENT PAGE CONTEXT: {request.page_context}. Use this to provide highly relevant and specific suggestions to what the user is currently seeing or doing."
+
     if request.language == "Hinglish":
         system_content += "\n\nSTRICT LANGUAGE RULE: Respond ONLY in Hinglish (a mix of Romanized Hindi and English). Use Hindi for conversational parts and English for all buttons, menus, and technical terms. Example: 'Aap **Report Issue** button click karein.'"
     else:

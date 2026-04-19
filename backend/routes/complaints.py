@@ -443,12 +443,28 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if not isinstance(timeline, list):
             timeline = []
 
-        timeline.append({
-            "status": body.status,
-            "timestamp": datetime.now(UTC).isoformat(),
-            "note": body.note,
-            "actor": body.actor,
-        })
+        # Only add to timeline if status changes or a new rating is being added
+        # This prevents redundant "Closed" entries when a user submits a rating for an already closed complaint
+        latest_status = doc.get("status")
+        should_add_to_timeline = True
+        
+        if body.status == latest_status:
+            # If status is the same, only add to timeline if we are adding a rating for the first time
+            if body.status == "Closed":
+                if body.rating is not None and doc.get("rating") is None:
+                    should_add_to_timeline = True # First time rating
+                else:
+                    should_add_to_timeline = False # redundant
+            else:
+                should_add_to_timeline = False
+
+        if should_add_to_timeline:
+            timeline.append({
+                "status": body.status,
+                "timestamp": datetime.now(UTC).isoformat(),
+                "note": body.note,
+                "actor": body.actor,
+            })
         
         # Build update payload - include assignedTo if provided
         update_payload = {
@@ -472,6 +488,8 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if body.status == "Declined":
             worker_name = doc.get("assignedTo")
             if worker_name:
+                # Penalty only if it hasn't been declined before (to prevent abuse)
+                # But here we don't have a record of "declined count", so we just apply it.
                 _update_worker_rating(worker_name, penalty=0.2) # Partial deduction
 
         if body.status == "Rejected":
@@ -491,12 +509,13 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if old_status not in ("Resolved", "Closed") and body.status in ("Resolved", "Closed"):
             update_manager_workload(doc.get("assignedManagerId"), -1)
         
-        # Increment back if declined from a resolved state
+        # Increment back if declined from a resolved/closed state
         if old_status in ("Resolved", "Closed") and body.status == "Declined":
             update_manager_workload(doc.get("assignedManagerId"), 1)
             
         # Rating update: If closing with a rating, update the worker's rating
-        if body.status == "Closed" and body.rating is not None:
+        # ONLY update if it wasn't already rated (to prevent inflation)
+        if body.status == "Closed" and body.rating is not None and doc.get("rating") is None:
             worker_name = doc.get("assignedTo")
             if worker_name:
                 _update_worker_rating(worker_name, body.rating)
