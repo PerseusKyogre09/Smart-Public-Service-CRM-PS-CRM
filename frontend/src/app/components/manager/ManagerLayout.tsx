@@ -9,6 +9,8 @@ const navItems = [
   { to: "/manager/workers", icon: Users, label: "My Workers" },
 ];
 
+import CivicAIAssistant from "../dashboard/CivicAIAssistant";
+
 export default function ManagerLayout() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,10 +72,9 @@ export default function ManagerLayout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${isActive
+                  ? "bg-sky-50 text-sky-700"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`
               }
             >
@@ -159,6 +160,8 @@ export default function ManagerLayout() {
           <Outlet />
         </div>
       </main>
+
+      <CivicAIAssistant type="manager" />
     </div>
   );
 }

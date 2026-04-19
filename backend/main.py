@@ -7,6 +7,7 @@ from routes.stats import router as stats_router
 from routes.uploads import router as uploads_router
 from routes.leaderboard import router as leaderboard_router
 from routes.users import router as users_router
+from routes.ai import router as ai_router
 import threading
 from cron_job import setup_cron
 
@@ -55,6 +56,7 @@ app.include_router(stats_router)
 app.include_router(uploads_router)
 app.include_router(leaderboard_router)
 app.include_router(users_router)
+app.include_router(ai_router)
 
 
 @app.get("/health")
