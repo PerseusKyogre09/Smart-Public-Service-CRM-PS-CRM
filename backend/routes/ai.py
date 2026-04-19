@@ -17,6 +17,7 @@ class ChatRequest(BaseModel):
     message: str
     portal_type: str = "citizen" # citizen, manager, worker
     history: Optional[List[dict]] = []
+    language: Optional[str] = "English"
 
 class WorkerSummary(BaseModel):
     id: str
@@ -69,6 +70,11 @@ async def chat_with_ai(request: ChatRequest):
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
 
     system_content = SYSTEM_PROMPTS.get(request.portal_type, SYSTEM_PROMPTS["citizen"])
+    
+    if request.language == "Hinglish":
+        system_content += "\n\nSTRICT LANGUAGE RULE: Respond ONLY in Hinglish (a mix of Romanized Hindi and English). Use Hindi for conversational parts and English for all buttons, menus, and technical terms. Example: 'Aap **Report Issue** button click karein.'"
+    else:
+        system_content += "\n\nSTRICT LANGUAGE RULE: Respond ONLY in professional English. Do NOT use Hindi script or Hindi words even if the user speaks in Hindi. This is for users who prefer a standard English interface."
     
     messages = [
         {"role": "system", "content": system_content}
@@ -124,14 +130,13 @@ async def smart_assign(request: SmartAssignRequest):
     
     prompt += """
     Guidelines for selection:
-    1. **Expertise**: Match the complaint category to the worker's experience if implied.
-    2. **Workload (CRITICAL)**: STRONGLY prioritize workers with fewer active tasks to ensure fast resolution and fairness. A worker with lower workload must be preferred even over a higher-rated worker if the gap in active tasks is more than 1.
-    3. **Performance**: Consider higher ratings as a secondary factor.
-    4. **Location**: Workers whose primary area matches the complaint location should be prioritized.
+    1. **Performance (CRITICAL)**: Prioritize workers with higher ratings (e.g. 4.5+). High performance is the best indicator of service quality.
+    2. **Workload**: Factor in active tasks to ensure the selected worker isn't overwhelmed. If ratings are similar, choose the worker with fewer active tasks.
+    3. **Location & Expertise**: Prefer workers whose primary area matches the complaint or who have relevant experience implied by the category.
     
     Respond STRICTLY in JSON format with two keys:
     - "recommendedWorkerId": The ID of the best worker.
-    - "reasoning": A brief (1-2 sentence) explanation of why this worker was chosen. DO NOT mention that you are an AI or using AI.
+    - "reasoning": A brief (1-2 sentence) explanation. Mention both the worker's EXCELLENT rating and their load.
     """
 
     async with httpx.AsyncClient() as client:

@@ -381,8 +381,8 @@ async def get_complaint(complaint_id: str):
         raise HTTPException(status_code=404, detail="Complaint not found")
 
 
-def _update_worker_rating(worker_name: str, new_rating: float):
-    """Updates the worker's average rating based on the new rating."""
+def _update_worker_rating(worker_name: str, new_rating: Optional[float] = None, penalty: float = 0.0):
+    """Updates the worker's average rating. Supports new ratings or direct penalties."""
     try:
         # 1. Find the worker by name
         resp = databases.list_documents(
@@ -395,13 +395,25 @@ def _update_worker_rating(worker_name: str, new_rating: float):
         
         worker_doc = resp["documents"][0]
         worker_id = worker_doc["$id"]
-        
-        # 2. Calculate new average
         current_rating = worker_doc.get("rating") or 0.0
-        current_count = worker_doc.get("ratingCount") or 0
+        current_count = worker_doc.get("ratingCount")
         
-        new_count = current_count + 1
-        new_average = ((current_rating * current_count) + new_rating) / new_count
+        # Handle seeded ratings that might not have a count yet
+        if current_count is None:
+            current_count = 1 if current_rating > 0 else 0
+
+        # 2. Calculate new average
+        if penalty > 0:
+            # Apply penalty (direct deduction from average)
+            new_average = max(1.0, current_rating - penalty)
+            new_count = current_count 
+        elif new_rating is not None:
+            # Traditional average update
+            new_count = current_count + 1
+            new_average = ((current_rating * current_count) + new_rating) / new_count
+        else:
+            return
+
         new_average = round(new_average, 2)
         
         # 3. Update worker document
@@ -409,7 +421,7 @@ def _update_worker_rating(worker_name: str, new_rating: float):
             "rating": new_average,
             "ratingCount": new_count
         })
-        print(f"WORKER_RATING_UPDATED: {worker_name} ({new_average} based on {new_count} ratings)")
+        print(f"WORKER_RATING_UPDATED: {worker_name} (Average: {new_average}, Count: {new_count})")
     except Exception as e:
         print(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
 
@@ -457,6 +469,20 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         if body.feedback:
             update_payload["feedback"] = body.feedback
         
+        if body.status == "Declined":
+            worker_name = doc.get("assignedTo")
+            if worker_name:
+                _update_worker_rating(worker_name, penalty=0.2) # Partial deduction
+
+        if body.status == "Rejected":
+            worker_name = doc.get("assignedTo")
+            if worker_name:
+                _update_worker_rating(worker_name, penalty=0.5) # Harsh deduction
+            
+            # Reset to Assigned status but clear the worker
+            update_payload["status"] = "Assigned"
+            update_payload["assignedTo"] = None
+        
         databases.update_document(DATABASE_ID, COLLECTION_ID, complaint_id, update_payload)
         updated = databases.get_document(DATABASE_ID, COLLECTION_ID, complaint_id)
 
@@ -464,6 +490,10 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         old_status = doc.get("status")
         if old_status not in ("Resolved", "Closed") and body.status in ("Resolved", "Closed"):
             update_manager_workload(doc.get("assignedManagerId"), -1)
+        
+        # Increment back if declined from a resolved state
+        if old_status in ("Resolved", "Closed") and body.status == "Declined":
+            update_manager_workload(doc.get("assignedManagerId"), 1)
             
         # Rating update: If closing with a rating, update the worker's rating
         if body.status == "Closed" and body.rating is not None:

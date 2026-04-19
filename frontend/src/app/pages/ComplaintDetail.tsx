@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
 import { api } from "../api";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 import {
@@ -60,6 +60,7 @@ export default function ComplaintDetail() {
   const [selectedReassignManager, setSelectedReassignManager] =
     useState<string>("");
   const [managers, setManagers] = useState<any[]>([]);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
 
   useEffect(() => {
     appwriteService
@@ -255,6 +256,32 @@ export default function ComplaintDetail() {
       console.error("Failed to submit rating:", error);
       toast.error(
         error.message || "Failed to submit rating. Please try again.",
+      );
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
+
+  const handleDeclineResolution = async () => {
+    setIsSubmittingRating(true);
+    try {
+      await api.patch(`/api/complaints/${complaint.id}/status`, {
+        status: "Declined",
+        note: "Resolution declined by citizen",
+        actor: currentUser?.name || "Citizen",
+      });
+
+      toast.success(
+        "Resolution declined. Your complaint has been sent back to the manager for re-assignment.",
+      );
+
+      // Refresh complaint data
+      const updated = await appwriteService.getComplaintById(complaint.id);
+      setComplaint(updated);
+    } catch (error: any) {
+      console.error("Failed to decline resolution:", error);
+      toast.error(
+        error.message || "Failed to decline resolution. Please try again.",
       );
     } finally {
       setIsSubmittingRating(false);
@@ -700,7 +727,17 @@ export default function ComplaintDetail() {
                   Escalate Complaint
                 </button>
               )}
-              {canReopen && (
+              {complaint.status === "Resolved" && isReporter && (
+                <button
+                  onClick={() => setShowDeclineModal(true)}
+                  disabled={isSubmittingRating}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 hover:bg-rose-100 disabled:bg-slate-50 text-rose-700 text-sm font-[600] rounded-xl border border-rose-100 transition-colors disabled:cursor-not-allowed shadow-sm"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  {isSubmittingRating ? "Processing..." : "Decline Resolution & Re-open"}
+                </button>
+              )}
+              {canReopen && complaint.status === "Closed" && (
                 <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-[600] rounded-xl border border-amber-100 transition-colors">
                   Re-open Complaint (7 days)
                 </button>
@@ -1072,6 +1109,49 @@ export default function ComplaintDetail() {
           </motion.div>
         </div>
       )}
+      <AnimatePresence>
+        {showDeclineModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl border border-slate-100"
+            >
+              <div className="p-8 text-center">
+                <div className="h-16 w-16 rounded-3xl bg-rose-50 flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle className="h-8 w-8 text-rose-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                  Decline Resolution?
+                </h3>
+                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                  Are you sure you want to decline this resolution? The
+                  complaint will be re-assigned to the manager for further
+                  action.
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setShowDeclineModal(false);
+                      handleDeclineResolution();
+                    }}
+                    className="w-full py-4 text-sm font-bold text-white bg-rose-600 rounded-2xl hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 active:scale-[0.98]"
+                  >
+                    Yes, Decline Resolution
+                  </button>
+                  <button
+                    onClick={() => setShowDeclineModal(false)}
+                    className="w-full py-4 text-sm font-bold text-slate-600 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all active:scale-[0.98]"
+                  >
+                    Go Back
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
