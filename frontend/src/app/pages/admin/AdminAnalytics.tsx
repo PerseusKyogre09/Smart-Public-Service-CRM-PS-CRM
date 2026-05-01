@@ -23,6 +23,19 @@ import {
   Line,
   Cell,
 } from "recharts";
+import {
+  Activity,
+  LayoutDashboard,
+  Map as MapIcon,
+  BarChart3,
+  TrendingUp,
+  Users,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Smile,
+} from "lucide-react";
+import { Skeleton } from "../../components/ui/skeleton";
 import { mockAreaStats } from "../../data/mockData";
 
 type DelhiZoneId =
@@ -827,7 +840,7 @@ export default function AdminAnalytics() {
     [filteredComplaints],
   );
 
-  const heatmapZoneStats = useMemo<ZoneStats[]>(() => {
+  const zoneStats = useMemo<ZoneStats[]>(() => {
     const statsByZone: Record<DelhiZoneId, ZoneStats> =
       DELHI_ZONE_CONFIG.reduce(
         (acc, zone) => {
@@ -1048,66 +1061,78 @@ export default function AdminAnalytics() {
 
   if (loading && complaints.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-8 text-slate-500">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
-          <div className="h-4 w-32 bg-slate-200 rounded"></div>
+      <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48 rounded-xl" />
+            <Skeleton className="h-4 w-32 rounded-lg" />
+          </div>
+          <Skeleton className="h-12 w-40 rounded-2xl" />
+        </div>
+        <Skeleton className="h-[560px] w-full rounded-[2.5rem]" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-[2rem]" />
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-2 gap-6">
+          <Skeleton className="h-80 rounded-[2.5rem]" />
+          <Skeleton className="h-80 rounded-[2.5rem]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto" id="analytics-dashboard">
+    <div className="space-y-10 max-w-7xl mx-auto pb-12" id="analytics-dashboard">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-[800] text-[#ffcbd1]">
-            Analytics & Heatmap
-          </h1>
-          <p className="text-white/90 text-sm mt-1">
-            Delhi NCT civic intelligence dashboard · all records
+      <div className="flex items-center justify-between px-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/10">
+              <Activity size={20} />
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
+              Intelligence Center
+            </h1>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-1">
+            NCT Delhi Operational Metrics · Command Heatmap
           </p>
+        </div>
+        <div className="flex gap-4">
+          <select
+            value={activeCategory}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            className="h-14 px-8 text-[10px] font-black uppercase tracking-widest bg-white border border-slate-200 rounded-2xl focus:outline-none text-slate-900 cursor-pointer hover:bg-slate-50 transition-all shadow-sm"
+          >
+            <option value="">Global Operations</option>
+            {[
+              "Pothole",
+              "Garbage",
+              "Water",
+              "Streetlight",
+              "Safety",
+              "Sanitation",
+              "Construction",
+              "Other",
+            ].map((c) => (
+              <option key={c} value={c}>
+                {c.toUpperCase()} SECTOR
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Heatmap */}
-      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-base font-[700] text-slate-900">
-              Live Complaint Heatmap
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Delhi-only zone map with zoom-based deep regions
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={activeCategory}
-              onChange={(e) => setActiveCategory(e.target.value)}
-              className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none text-slate-700 cursor-pointer"
-            >
-              <option value="">Select Category</option>
-              {[
-                "Pothole",
-                "Garbage",
-                "Water",
-                "Streetlight",
-                "Safety",
-                "Sanitation",
-                "Construction",
-                "Other",
-              ].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+      {/* Heatmap Section */}
+      <div className="space-y-6">
+        <div className="px-2">
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+            Live Heatmap Overview
+          </h2>
         </div>
-        <CityHeatmap
-          activeCategory={activeCategory}
-          zoneStats={heatmapZoneStats}
-        />
+        <CityHeatmap activeCategory={activeCategory} zoneStats={zoneStats} />
       </div>
 
       {/* KPI Metrics */}
@@ -1116,50 +1141,54 @@ export default function AdminAnalytics() {
           {
             label: "Complaint Received",
             value: `${summaryCounts.received}`,
-            target: "All records",
+            target: "All Registry",
             ok: true,
-            desc: "New complaints",
+            desc: "Operational Load",
+            color: "border-slate-900"
           },
           {
             label: "Solved",
             value: `${summaryCounts.solved}`,
-            target: "Higher is better",
+            target: "80% Threshold",
             ok:
               summaryCounts.solved >=
               Math.max(1, Math.round(summaryCounts.received * 0.5)),
-            desc: "Resolved / closed",
+            desc: "Resolution Rate",
+            color: "border-emerald-500"
           },
           {
             label: "Pending",
             value: `${summaryCounts.pending}`,
-            target: "Lower is better",
+            target: "< 20% Backlog",
             ok:
               summaryCounts.pending <=
               Math.max(3, Math.round(summaryCounts.received * 0.4)),
-            desc: "Still open",
+            desc: "Queue Backlog",
+            color: "border-rose-500"
           },
           {
             label: "SLA Compliance",
             value: `${kpiData.slaCompliance}%`,
-            target: "> 80%",
+            target: "95% Target",
             ok: kpiData.slaCompliance > 80,
-            desc: "Within SLA window",
+            desc: "Protocol Fidelity",
+            color: "border-violet-600"
           },
-        ].map(({ label, value, target, ok, desc }) => (
+        ].map(({ label, value, target, ok, desc, color }) => (
           <div
             key={label}
-            className="bg-white/88 backdrop-blur-xl rounded-[1.75rem] p-5 border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)]"
+            className={`bg-white rounded-[1.75rem] p-6 border border-slate-100 border-l-[6px] ${color} shadow-lg shadow-slate-200/40`}
           >
             <div className="flex justify-between items-start mb-2">
-              <span className="text-xs text-slate-500 font-[500]">{desc}</span>
+              <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{desc}</span>
               <span
                 className={`w-2 h-2 rounded-full mt-1 ${ok ? "bg-emerald-500" : "bg-red-500"}`}
               />
             </div>
-            <div className="text-2xl font-[800] text-slate-900 mb-1">
+            <div className="text-3xl font-black text-slate-900 mb-1 tracking-tighter">
               {value}
             </div>
-            <div className="text-xs text-slate-400">Target: {target}</div>
+            <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Benchmark: {target}</div>
           </div>
         ))}
       </div>
@@ -1178,8 +1207,8 @@ export default function AdminAnalytics() {
             <AreaChart data={slaHistoryData}>
               <defs>
                 <linearGradient id="slaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -1215,10 +1244,10 @@ export default function AdminAnalytics() {
               <Area
                 type="monotone"
                 dataKey="compliance"
-                stroke="#8B5CF6"
-                strokeWidth={2.5}
+                stroke="#7c3aed"
+                strokeWidth={3}
                 fill="url(#slaGrad)"
-                dot={{ fill: "#8B5CF6", strokeWidth: 0, r: 4 }}
+                dot={{ fill: "#7c3aed", strokeWidth: 0, r: 4 }}
               />
               <Line
                 type="monotone"
@@ -1272,16 +1301,16 @@ export default function AdminAnalytics() {
                 itemStyle={{ color: "#f8fafc" }}
                 formatter={(value: number) => [`${value}h`, "Avg Time"]}
               />
-              <Bar dataKey="avgTime" name="Avg Time" radius={[0, 6, 6, 0]}>
+              <Bar dataKey="avgTime" name="Avg Time" radius={[0, 4, 4, 0]}>
                 {resolutionByZone.map((entry, i) => (
                   <Cell
                     key={i}
                     fill={
                       entry.avgTime > 72
-                        ? "#EF4444"
+                        ? "#be123c"
                         : entry.avgTime > 48
-                          ? "#F59E0B"
-                          : "#10B981"
+                          ? "#d97706"
+                          : "#4f46e5"
                     }
                   />
                 ))}
@@ -1301,21 +1330,21 @@ export default function AdminAnalytics() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Area
+              <tr className="bg-slate-900 border-b border-slate-800">
+                <th className="text-left px-8 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Operational Sector
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Received
+                <th className="text-right px-6 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Registry
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Solved
+                <th className="text-right px-6 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Authenticated
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Pending
+                <th className="text-right px-6 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Backlog
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Avg Time
+                <th className="text-right px-8 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Efficiency (Avg)
                 </th>
               </tr>
             </thead>

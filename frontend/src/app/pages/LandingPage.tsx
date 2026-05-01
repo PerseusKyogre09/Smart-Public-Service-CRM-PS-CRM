@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Zap,
@@ -36,6 +36,7 @@ import {
   LifeBuoy,
   Scale,
 } from "lucide-react";
+import { Skeleton } from "../components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -510,6 +511,7 @@ export default function LandingPage() {
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
 
   return (
     <div

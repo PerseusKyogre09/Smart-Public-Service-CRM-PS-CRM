@@ -51,24 +51,41 @@ def assign_manager_to_complaint(complaint_state: str) -> dict:
         return {"id": "SYSTEM", "name": "SystemAdmin"}
 
     manager_workloads = []
-    for mgr_doc in state_managers:
-        mgr = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
-        count = mgr_doc.get("activeComplaints")
-        if count is None:
-            try:
-                resp = databases.list_documents(
-                    DATABASE_ID, COLLECTION_ID,
-                    queries=[
-                        Query.equal("assignedManagerId", mgr["id"]),
-                        Query.not_equal("status", "Resolved"),
-                        Query.not_equal("status", "Closed"),
-                        Query.limit(1),  # we only need the total count
-                    ]
-                )
-                count = resp.get("total", 0)
-            except Exception:
-                count = 0
-        manager_workloads.append((mgr, count))
+    
+    # Optimized: Batch fetch all active complaints for this manager's state
+    # to count workloads in one go instead of N queries
+    try:
+        active_resp = databases.list_documents(
+            DATABASE_ID, COLLECTION_ID,
+            queries=[
+                Query.equal("state", complaint_state),
+                Query.not_equal("status", "Resolved"),
+                Query.not_equal("status", "Closed"),
+                Query.limit(1000)
+            ]
+        )
+        all_active = active_resp.get("documents", [])
+        
+        # Build memory map of workloads by managerId
+        state_workload_map = {}
+        for comp in all_active:
+            mgr_id = comp.get("assignedManagerId")
+            if mgr_id:
+                state_workload_map[mgr_id] = state_workload_map.get(mgr_id, 0) + 1
+        
+        for mgr_doc in state_managers:
+            mgr = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
+            # Use cached field if available, otherwise use our memory map
+            count = mgr_doc.get("activeComplaints")
+            if count is None:
+                count = state_workload_map.get(mgr["id"], 0)
+            manager_workloads.append((mgr, count))
+            
+    except Exception as e:
+        logger.error(f"BATCH_WORKLOAD_CALC_ERROR: {e}")
+        # Final fallback if batch fails
+        for mgr_doc in state_managers:
+            manager_workloads.append(({"id": mgr_doc["$id"], "name": mgr_doc["name"]}, 0))
 
     best_manager = min(manager_workloads, key=lambda x: x[1])[0]
     return best_manager

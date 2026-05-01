@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import {
   Mail,
   Shield,
@@ -21,6 +21,12 @@ export default function LoginPage() {
   const [mode, setMode] = useState<
     "choose" | "email-login" | "email-signup" | "manager-login" | "admin-login"
   >("choose");
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const OFFICIAL_ADMIN_EMAIL = "admin@civicpulse.com";
   const OFFICIAL_ADMIN_PASSWORD = "admin123456";
@@ -608,23 +614,21 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {mode === "admin-login" && (
+                <button
+                  type="button"
+                  onClick={fillAdminDemoCredentials}
+                  className="text-xs text-sky-700 font-[600] hover:underline ml-1"
+                >
+                  Use Demo Credentials (Auto Fill)
+                </button>
+              )}
             </div>
-
-            {mode === "admin-login" && (
-              <button
-                type="button"
-                onClick={fillAdminDemoCredentials}
-                disabled={isLoading}
-                className="w-full border border-sky-200 bg-sky-50 hover:bg-sky-100 text-sky-700 font-[600] py-3 rounded-2xl transition-all duration-200 disabled:opacity-50"
-              >
-                Use Demo Credentials (Auto Fill)
-              </button>
-            )}
 
             <button
               type="button"

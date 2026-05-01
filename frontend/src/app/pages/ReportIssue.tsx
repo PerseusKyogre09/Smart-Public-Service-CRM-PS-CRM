@@ -18,7 +18,9 @@ import {
   Plus,
   UserCheck,
   FileText,
+  Clock,
 } from "lucide-react";
+import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 import gsap from "gsap";
@@ -138,6 +140,13 @@ export default function ReportIssue() {
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [locationDetected, setLocationDetected] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial mount sync
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     null,
   );
@@ -821,38 +830,63 @@ export default function ReportIssue() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-8 animate-pulse px-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-6 w-32 rounded-lg" />
+        </div>
+        <div className="rounded-[36px] border border-slate-100 bg-white p-10 shadow-sm space-y-8">
+          <div className="space-y-4">
+            <Skeleton className="h-12 w-2/3 rounded-xl" />
+            <Skeleton className="h-4 w-full rounded-lg" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-[24px]" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8" ref={containerRef}>
-      <ReportCardTemplate />
-      <section className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-blue-100 px-6 py-7 shadow-sm">
+    <div className="max-w-4xl mx-auto space-y-8 pb-12 px-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <button
-          onClick={() => navigate("/dashboard")}
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-sky-700 transition"
+          onClick={() => {
+            if (step > 1) setStep((s) => (s - 1) as Step);
+            else navigate("/dashboard");
+          }}
+          className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-sky-700 transition-all"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Cancel
+          <div className="h-10 w-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-sky-50 group-hover:border-sky-200 transition-all">
+            <ArrowLeft className="w-5 h-5" />
+          </div>
+          {step === 1 ? "Cancel Report" : "Previous Step"}
         </button>
-        <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Report an issue</h1>
-          <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-6">
+          <div className="hidden sm:flex items-center gap-2">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                className={`h-1.5 w-8 rounded-full transition-all duration-500 ${
                   step >= i ? "bg-sky-600 shadow-[0_0_10px_rgba(2,132,199,0.3)]" : "bg-slate-200"
                 }`}
               />
             ))}
           </div>
-          <p className="text-sm font-medium text-slate-500">
-            STEP {step} OF 4: {
-              step === 1 ? "Select Category" : 
-              step === 2 ? "Location Details" : 
-              step === 3 ? "Description" : "Photos & Evidence"
-            }
+          <p className="text-sm font-medium text-slate-500 uppercase tracking-tight">
+            Step {step} of 4: <span className="font-black text-slate-900 ml-1">
+              {step === 1 ? "Category" : step === 2 ? "Location" : step === 3 ? "Details" : "Evidence"}
+            </span>
           </p>
         </div>
-      </section>
+      </div>
 
       <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-5">
@@ -1187,37 +1221,27 @@ export default function ReportIssue() {
       {step === 4 && (
         <section className="step-section space-y-6">
           <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Add photos</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Photos are optional, but they help verify the issue quickly.
-          </p>
-
-          <div className="mt-6 flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-slate-200 bg-slate-50/50 p-10 transition-all hover:bg-white hover:border-sky-300 group">
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              id="photo-upload"
-              disabled={isUploadingPhoto || uploadedPhotos.length >= 5}
-            />
-            <label
-              htmlFor="photo-upload"
-              className={`flex flex-col items-center justify-center cursor-pointer text-center ${uploadedPhotos.length >= 5 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-[36px] border-2 border-dashed border-slate-200 bg-slate-50/50 p-10 transition-all hover:border-sky-300 hover:bg-sky-50 group">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={uploadedPhotos.length >= 5 || isUploadingPhoto}
+                className="hidden"
+              />
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-sky-700 shadow-sm transition-transform group-hover:scale-110">
                 <ImagePlus className="h-8 w-8" />
               </div>
               <div className="text-lg font-bold text-slate-900">
                 {uploadedPhotos.length >= 5 ? "Limit reached" : "Upload images"}
               </div>
-              <p className="mt-2 text-sm text-slate-500 max-w-[240px]">
+              <p className="mt-2 text-sm text-slate-500 max-w-[240px] text-center leading-relaxed">
                 {uploadedPhotos.length >= 5
                   ? "You have already added 5 photos"
                   : "Tap to select up to 5 photos from your gallery or camera"}
               </p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-sky-700 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-sky-900/10">
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-sky-700 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-sky-900/10 transition-transform active:scale-95">
                 <Plus className="h-3.5 w-3.5" /> Select Files
               </div>
             </label>
@@ -1274,7 +1298,6 @@ export default function ReportIssue() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-        </div>
         </section>
       )}
 

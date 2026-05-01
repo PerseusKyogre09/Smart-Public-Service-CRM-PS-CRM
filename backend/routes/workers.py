@@ -21,23 +21,32 @@ async def list_workers(state: Optional[str] = None):
         resp = databases.list_documents(DATABASE_ID, WORKERS_COLLECTION_ID, queries=queries)
         workers = [_map_worker(d) for d in resp["documents"]]
         
-        # Add current workload count for each worker
-        for worker in workers:
-            try:
-                # Count active complaints assigned to this worker
-                # In complaints collection, 'assignedTo' stores the worker name (based on existing logic)
-                # It would be better to store workerId, but let's stick to existing code for compatibility
-                workload_resp = databases.list_documents(
-                    DATABASE_ID, COLLECTION_ID,
-                    queries=[
-                        Query.equal("assignedTo", worker["name"]),
-                        Query.not_equal("status", "Resolved"),
-                        Query.not_equal("status", "Closed"),
-                        Query.limit(1)
-                    ]
-                )
-                worker["activeTasks"] = workload_resp.get("total", 0)
-            except Exception:
+        # Optimized: Batch fetch all active complaints to count workloads in one go
+        # This avoids the N+1 query problem (making a DB call for every worker)
+        try:
+            active_resp = databases.list_documents(
+                DATABASE_ID, COLLECTION_ID,
+                queries=[
+                    Query.not_equal("status", "Resolved"),
+                    Query.not_equal("status", "Closed"),
+                    Query.limit(1000) # Support up to 1000 active complaints for workload calc
+                ]
+            )
+            all_active = active_resp.get("documents", [])
+            
+            # Count in-memory
+            workload_map = {}
+            for comp in all_active:
+                assigned = comp.get("assignedTo")
+                if assigned:
+                    workload_map[assigned] = workload_map.get(assigned, 0) + 1
+            
+            for worker in workers:
+                worker["activeTasks"] = workload_map.get(worker["name"], 0)
+                
+        except Exception as e:
+            print(f"Workload calculation failed: {e}")
+            for worker in workers:
                 worker["activeTasks"] = 0
                 
         return workers

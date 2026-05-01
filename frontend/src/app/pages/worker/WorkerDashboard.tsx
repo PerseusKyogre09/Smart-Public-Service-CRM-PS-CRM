@@ -1,14 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-  MapPin,
-  Clock,
-  AlertCircle,
-  Check,
-  ChevronRight,
-  Phone,
   Search,
+  Navigation2,
+  Navigation,
+  ArrowRight,
+  ExternalLink,
+  AlertCircle,
+  Clock,
+  Check,
+  MapPin,
+  Phone,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { api } from "../../api";
 import { account } from "../../appwrite";
@@ -246,22 +249,24 @@ export default function WorkerDashboard() {
   return (
     <div className="space-y-6 pb-12">
       {/* Stats Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+          className="bg-white rounded-[32px] border border-slate-100 p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 Active Tasks
               </p>
-              <p className="text-3xl font-black text-slate-900 mt-1">
+              <p className="text-4xl font-black text-slate-900 mt-1">
                 {tasks.filter((t) => t.status === "In Progress").length}
               </p>
             </div>
-            <AlertCircle className="text-amber-500" size={32} />
+            <div className="h-14 w-14 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-inner">
+              <AlertCircle size={28} />
+            </div>
           </div>
         </motion.div>
 
@@ -269,18 +274,20 @@ export default function WorkerDashboard() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+          className="bg-white rounded-[32px] border border-slate-100 p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Pending
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Assigned
               </p>
-              <p className="text-3xl font-black text-slate-900 mt-1">
+              <p className="text-4xl font-black text-slate-900 mt-1">
                 {tasks.filter((t) => t.status === "Assigned").length}
               </p>
             </div>
-            <Clock className="text-sky-500" size={32} />
+            <div className="h-14 w-14 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-600 shadow-inner">
+              <Clock size={28} />
+            </div>
           </div>
         </motion.div>
 
@@ -288,18 +295,20 @@ export default function WorkerDashboard() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+          className="bg-white rounded-[32px] border border-slate-100 p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 Rating
               </p>
-              <p className="text-3xl font-black text-slate-900 mt-1">
-                4.2<span className="text-xl">⭐</span>
+              <p className="text-4xl font-black text-slate-900 mt-1 flex items-center gap-1">
+                4.2<span className="text-xl text-amber-500">★</span>
               </p>
             </div>
-            <Check className="text-emerald-500" size={32} />
+            <div className="h-14 w-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-inner">
+              <Check size={28} />
+            </div>
           </div>
         </motion.div>
       </div>
@@ -308,17 +317,23 @@ export default function WorkerDashboard() {
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-bold text-slate-900">Your Tasks</h2>
-          <div className="flex gap-2">
+          <div className="flex bg-slate-100/50 p-1 rounded-2xl w-fit">
             {(["all", "active", "pending"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${filter === f
-                  ? "bg-sky-600 text-white shadow-lg shadow-sky-600/20"
-                  : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
+                className="relative px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {filter === f && (
+                  <motion.div
+                    layoutId="activeFilter"
+                    className="absolute inset-0 bg-white rounded-xl shadow-md"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className={`relative z-10 ${filter === f ? "text-sky-600" : "text-slate-400"}`}>
+                  {f}
+                </span>
               </button>
             ))}
           </div>
@@ -329,10 +344,10 @@ export default function WorkerDashboard() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by ID or address..."
+            placeholder="Search tasks by ID, area, or description..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-11 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition"
+            className="w-full h-14 rounded-[1.5rem] border border-slate-100 bg-white/80 backdrop-blur-md pl-12 pr-6 text-sm font-medium focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500/50 outline-none transition-all shadow-sm placeholder:text-slate-400"
           />
         </div>
 
@@ -355,111 +370,123 @@ export default function WorkerDashboard() {
               {filteredTasks.map((task) => (
                 <motion.div
                   layout
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.99 }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   key={task.id}
                   onClick={() => setSelectedTask(task)}
-                  className={`cursor-pointer rounded-2xl border p-5 transition-all relative overflow-hidden ${
+                  className={`cursor-pointer rounded-[2.5rem] border p-8 transition-all relative overflow-hidden group ${
                     selectedTask?.id === task.id
-                      ? "border-sky-500 bg-sky-50 shadow-md"
-                      : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                      ? "border-sky-500 bg-sky-50/50 shadow-xl ring-4 ring-sky-500/10"
+                      : "border-slate-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)]"
                   }`}
                 >
-                  {/* SLA Urgency Indicator */}
+                  {/* SLA Urgency Side Banner */}
                   {(() => {
                     const diff = new Date(task.slaDeadline || task.createdAt).getTime() - Date.now();
                     const hours = diff / (1000 * 60 * 60);
                     if (task.status === "Resolved" || task.status === "Closed") return null;
                     
-                    if (diff <= 0) return <div className="absolute top-0 left-0 w-full h-1 bg-red-600 animate-pulse" />;
-                    if (hours < 12) return <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />;
-                    if (hours < 24) return <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />;
-                    return null;
+                    const colorClass = diff <= 0 ? "bg-red-500 animate-pulse" : 
+                                     hours < 12 ? "bg-amber-500" : 
+                                     "bg-emerald-500";
+                    return <div className={`absolute left-0 top-0 bottom-0 w-2 ${colorClass}`} />;
                   })()}
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-1 bg-slate-900 text-white text-[9px] font-black rounded tracking-tighter">
+
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-slate-900/20">
                           {task.category}
                         </span>
-                        <span className="text-[10px] font-mono text-slate-500">
+                        <span className="text-[11px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
                           #{task.id}
                         </span>
                       </div>
-                      <h3 className="font-bold text-slate-900 text-sm">
-                        {task.address}
-                      </h3>
-                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">
-                        {task.description}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div
-                        className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap ${task.status === "In Progress"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-sky-100 text-sky-700"
-                          }`}
-                      >
-                        {task.status}
+                      
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight group-hover:text-sky-700 transition-colors">
+                          {task.address}
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-xl">
+                          {task.description}
+                        </p>
                       </div>
-                      <SLATimer
-                        deadline={task.slaDeadline || task.createdAt}
-                        startTime={task.createdAt}
-                        status={task.status}
-                        showIcon={false}
-                      />
-                    </div>
-                  </div>
 
-                  {/* Task Meta */}
-                  <div className="flex flex-col gap-2 mb-4 pb-4 border-t border-slate-100 pt-4">
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <MapPin size={12} className="text-sky-500" />
-                      {task.distance ? `${task.distance}km away` : "Location pending"}
+                      <div className="flex flex-wrap gap-4 pt-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                          <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-sky-500">
+                            <MapPin size={14} />
+                          </div>
+                          {task.distance ? `${task.distance}km away` : "Locating..."}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                          <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-sky-500">
+                            <Clock size={14} />
+                          </div>
+                          {new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Clock size={12} className="text-sky-500" />
-                      {new Date(task.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 items-center justify-between">
-                    {task.citizenPhone && (
-                      <a
-                        href={`tel:${task.citizenPhone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-lg transition"
-                      >
-                        <Phone size={12} /> Call
-                      </a>
-                    )}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (task.coordinates) {
-                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${task.coordinates.lat},${task.coordinates.lng}`, '_blank');
-                          } else {
-                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.address)}`, '_blank');
-                          }
-                        }}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
-                      >
-                        <MapPin size={12} /> Navigate
-                      </button>
-                      {task.status === "Assigned" && (
+                    <div className="flex flex-col items-center md:items-end gap-6 shrink-0">
+                      <div className="flex flex-col items-end gap-1">
+                        <div
+                          className={`px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm ${
+                            task.status === "In Progress"
+                              ? "bg-amber-100 text-amber-700 border border-amber-200"
+                              : "bg-sky-100 text-sky-700 border border-sky-200"
+                          }`}
+                        >
+                          {task.status}
+                        </div>
+                        <SLATimer
+                          deadline={task.slaDeadline || task.createdAt}
+                          startTime={task.createdAt}
+                          status={task.status}
+                          showIcon={true}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {task.citizenPhone && (
+                          <a
+                            href={`tel:${task.citizenPhone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-12 w-12 flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-2xl transition-all shadow-lg shadow-slate-900/20 active:scale-95"
+                          >
+                            <Phone size={20} />
+                          </a>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleStartWork(task);
+                            if (task.coordinates) {
+                              window.open(`https://www.google.com/maps/dir/?api=1&destination=${task.coordinates.lat},${task.coordinates.lng}`, '_blank');
+                            } else {
+                              window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.address)}`, '_blank');
+                            }
                           }}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition"
+                          className="h-12 px-6 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
                         >
-                          <AlertCircle size={12} /> Start
+                          <MapPin size={18} />
+                          <span className="text-sm">Navigate</span>
                         </button>
-                      )}
+                        {task.status === "Assigned" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartWork(task);
+                            }}
+                            className="h-12 px-8 flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-sky-600/20 active:scale-95"
+                          >
+                            <AlertCircle size={18} />
+                            <span className="text-sm">Start Task</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -611,21 +638,6 @@ export default function WorkerDashboard() {
                     </p>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="flex-1 py-3 px-4 text-slate-700 font-bold hover:bg-slate-100 rounded-xl transition"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => setShowResolveModal(true)}
-                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
-                >
-                  <Check size={18} /> Mark Resolved
-                </button>
               </div>
             </motion.div>
           </div>

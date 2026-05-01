@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import {
   ArrowRight,
   CheckCircle2,
+  Clock,
   Clock3,
   FileText,
   LocateFixed,
@@ -208,58 +209,59 @@ export default function CitizenHome() {
 
   if (loading && complaints.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 px-2 animate-pulse">
         {/* Header Skeleton */}
-        <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
-          <Skeleton className="h-4 w-32 rounded-full mb-4" />
-          <Skeleton className="h-8 w-64 mb-3" />
-          <Skeleton className="h-4 w-full max-w-xl" />
-          <div className="flex gap-3 mt-6">
-            <Skeleton className="h-12 w-32 rounded-full" />
-            <Skeleton className="h-12 w-32 rounded-full" />
+        <div className="rounded-[40px] border border-slate-100 bg-white p-10 shadow-sm relative overflow-hidden">
+          <div className="relative z-10">
+            <Skeleton className="h-4 w-32 rounded-full mb-6" />
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-3/4 max-w-xl rounded-2xl" />
+              <Skeleton className="h-4 w-full max-w-2xl rounded-lg" />
+            </div>
+            <div className="flex gap-4 mt-8">
+              <Skeleton className="h-14 w-40 rounded-full" />
+              <Skeleton className="h-14 w-40 rounded-full" />
+            </div>
+          </div>
+          <div className="absolute top-0 right-0 p-10">
+             <Skeleton className="h-24 w-24 rounded-3xl opacity-20" />
           </div>
         </div>
 
         {/* Stats Grid Skeleton */}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
-              <Skeleton className="h-3 w-24 mb-3" />
-              <Skeleton className="h-8 w-12 mb-2" />
-              <Skeleton className="h-3 w-32" />
+            <div key={i} className="bg-white rounded-[32px] p-8 border border-slate-50 shadow-sm space-y-4">
+              <Skeleton className="h-3 w-20 uppercase" />
+              <Skeleton className="h-10 w-16" />
+              <Skeleton className="h-2 w-full rounded-full" />
             </div>
           ))}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-          {/* List Skeleton */}
-          <div className="bg-white rounded-[28px] border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-12" />
+        <div className="grid gap-8 xl:grid-cols-[1.7fr_1fr]">
+          {/* Main List Skeleton */}
+          <div className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm">
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+              <Skeleton className="h-6 w-48 rounded-lg" />
+              <Skeleton className="h-4 w-12 rounded-full" />
             </div>
             <div className="divide-y divide-slate-50">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="p-5 flex items-center gap-4">
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-3 w-1/2" />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-6 flex items-center gap-6">
+                  <div className="h-14 w-14 rounded-2xl bg-slate-50 flex-shrink-0 flex items-center justify-center">
+                    <Skeleton className="h-6 w-6 rounded-md" />
                   </div>
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Actions Skeleton */}
-          <div className="bg-white rounded-[28px] border border-slate-200 p-6 shadow-sm">
-            <Skeleton className="h-6 w-32 mb-6" />
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="p-4 rounded-2xl border border-slate-100">
-                  <Skeleton className="h-4 w-2/3 mb-2" />
-                  <Skeleton className="h-3 w-full" />
+                  <div className="flex-1 space-y-3">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-5 w-1/3 rounded-lg" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    <div className="flex gap-4">
+                      <Skeleton className="h-3 w-1/4 rounded-md" />
+                      <Skeleton className="h-3 w-1/5 rounded-md" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -326,36 +328,50 @@ export default function CitizenHome() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-6 sm:grid-cols-3">
         {[
           {
             label: "Reported by you",
             value: userComplaints.length,
             note: "Total complaints created",
+            icon: FileText,
+            color: "bg-sky-50 text-sky-600"
           },
           {
             label: "Active now",
             value: activeCount,
             note: "Still being worked on",
+            icon: Clock,
+            color: "bg-amber-50 text-amber-600"
           },
           {
             label: "Resolved",
             value: resolvedCount,
             note: "Completed or closed",
+            icon: CheckCircle2,
+            color: "bg-emerald-50 text-emerald-600"
           },
         ].map((item) => (
-          <div
+          <motion.div
             key={item.label}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            whileHover={{ y: -4, scale: 1.02 }}
+            className="rounded-[32px] border border-slate-100 bg-white p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all"
           >
-            <div className="text-sm font-medium text-slate-500">
-              {item.label}
+            <div className="flex justify-between items-start">
+              <div className="space-y-1">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {item.label}
+                </div>
+                <div className="text-4xl font-black text-slate-900 tracking-tight">
+                  {item.value}
+                </div>
+              </div>
+              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${item.color} shadow-inner`}>
+                <item.icon size={24} />
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-semibold text-slate-900">
-              {item.value}
-            </div>
-            <div className="mt-1 text-sm text-slate-500">{item.note}</div>
-          </div>
+            <div className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-tight">{item.note}</div>
+          </motion.div>
         ))}
       </section>
 
@@ -402,37 +418,39 @@ export default function CitizenHome() {
                   onClick={() =>
                     navigate(`/dashboard/complaints/${complaint.id}`)
                   }
-                  className="flex w-full items-start gap-4 px-6 py-4 text-left transition hover:bg-sky-50/60"
+                  className="flex w-full items-center gap-6 px-8 py-6 text-left transition-all hover:bg-slate-50 group"
                 >
-                  <div className="mt-1 rounded-xl bg-sky-50 p-2 text-sky-700">
-                    <FileText className="h-4 w-4" />
+                  <div className="h-14 w-14 shrink-0 rounded-[1.25rem] bg-slate-50 flex items-center justify-center text-sky-700 shadow-inner group-hover:bg-white group-hover:shadow-lg transition-all">
+                    <FileText className="h-6 w-6" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-900">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <p className="text-lg font-bold text-slate-900 tracking-tight">
                         {complaint.category || "Complaint"}
                         {complaint.subcategory
                           ? ` - ${complaint.subcategory}`
                           : ""}
                       </p>
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor[complaint.status] || "bg-slate-100 text-slate-700"}`}
+                        className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${statusColor[complaint.status] || "bg-slate-100 text-slate-700 shadow-sm"}`}
                       >
                         {complaint.status}
                       </span>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {complaint.address || "Address unavailable"}
+                    <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-400">
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-sky-500" />
+                        <span className="truncate max-w-[200px]">{complaint.address}</span>
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Clock3 className="h-4 w-4" />
-                        {formatComplaintDate(complaint.createdAt)}
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-sky-500" />
+                        {new Date(complaint.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
                   </div>
-                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-300" />
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-600 transition-all">
+                    <ArrowRight className="h-5 w-5" />
+                  </div>
                 </button>
               ))
             )}

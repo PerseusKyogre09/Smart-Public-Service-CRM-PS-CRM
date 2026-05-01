@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import {
   Search,
   Filter,
@@ -15,6 +15,10 @@ import {
   ChevronDown,
   UserCheck,
   Loader2,
+  Inbox,
+  Filter as FilterIcon,
+  LayoutGrid,
+  X
 } from "lucide-react";
 import { Skeleton } from "../../components/ui/skeleton";
 import { appwriteService } from "../../appwriteService";
@@ -166,6 +170,19 @@ export default function AdminQueue() {
     );
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportDataToPDF(filtered, "Central_Queue_Export");
+      toast.success("Registry Exported: PDF document is ready");
+    } catch (error) {
+      console.error("Export Error:", error);
+      toast.error("Export Failed: Could not generate PDF");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const categories = [
     "All",
     "Garbage",
@@ -186,196 +203,146 @@ export default function AdminQueue() {
     "North & North-West Delhi",
   ];
 
+  if (loading && complaints.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64 rounded-xl" />
+            <Skeleton className="h-4 w-48 rounded-lg" />
+          </div>
+          <Skeleton className="h-12 w-48 rounded-2xl" />
+        </div>
+        <Skeleton className="h-20 w-full rounded-[2rem]" />
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-[2rem]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-5 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-10 pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-[800] text-[#ffcbd1]">
-            Complaint Queue
-          </h1>
-          <p className="text-white/90 text-sm mt-1">
-            {filtered.length} of {complaints.length} complaints
+      <div className="flex items-center justify-between px-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/10">
+              <Inbox size={20} />
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Central Registry</h1>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-1">
+            Dispatch Operations · Real-time Control
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white/85 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm">
-            <RefreshCw className="w-4 h-4" /> Refresh
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                setIsExporting(true);
-                const breachedCount = filtered.filter(
-                  (c) => c.slaRemainingHours < 0,
-                ).length;
-                const atRiskCount = filtered.filter(
-                  (c) => c.slaRemainingHours >= 0 && c.slaRemainingHours < 12,
-                ).length;
-                const onTrackCount = filtered.filter(
-                  (c) => c.slaRemainingHours >= 12,
-                ).length;
-
-                const columns = [
-                  { label: "Complaint ID", key: "id" },
-                  { label: "Category", key: "category" },
-                  { label: "Area/Zone", key: "area" },
-                  { label: "Current Status", key: "status" },
-                  { label: "Priority", key: "priority" },
-                  { label: "SLA", key: "slaStatus" },
-                  { label: "Created On", key: "createdAt" },
-                ];
-                const displayData = filtered.map((c) => ({
-                  ...c,
-                  priority:
-                    c.priorityScore >= 0.75
-                      ? "High"
-                      : c.priorityScore >= 0.4
-                        ? "Medium"
-                        : "Low",
-                  slaStatus:
-                    c.slaRemainingHours < 0
-                      ? `Breached by ${Math.abs(c.slaRemainingHours)}h`
-                      : c.slaRemainingHours < 12
-                        ? `At Risk (${c.slaRemainingHours}h left)`
-                        : `On Track (${c.slaRemainingHours}h left)`,
-                  createdAt: new Date(c.createdAt).toLocaleDateString(),
-                }));
-
-                await exportDataToPDF(
-                  displayData,
-                  columns,
-                  "complaint-queue",
-                  "Complaint Queue Report",
-                  {
-                    subtitle:
-                      "Operational snapshot for complaint monitoring and SLA tracking",
-                    generatedBy: "Admin Portal",
-                    logoPath: "/logo.svg",
-                    filters: [
-                      `Search: ${search || "None"}`,
-                      `SLA: ${filterSLA}`,
-                      `Category: ${filterCategory}`,
-                      `Ward: ${filterWard}`,
-                    ],
-                    summary: [
-                      { label: "Total Shown", value: filtered.length },
-                      { label: "Breached", value: breachedCount },
-                      { label: "At Risk", value: atRiskCount },
-                      { label: "On Track", value: onTrackCount },
-                      {
-                        label: "Escalated",
-                        value: filtered.filter((c) => c.escalated).length,
-                      },
-                    ],
-                    footerSignature: "Prepared for CivicPulse Admin",
-                    footerNote: "Digitally generated complaint queue report",
-                    maxCellChars: 36,
-                  },
-                );
-                toast.success("Export completed successfully");
-              } catch (error) {
-                console.error("Export failed:", error);
-                toast.error("Failed to export data");
-              } finally {
-                setIsExporting(false);
-              }
-            }}
-            disabled={isExporting || complaints.length === 0}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white/85 backdrop-blur-xl border border-white rounded-2xl hover:bg-white transition-colors shadow-sm disabled:opacity-50"
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleExport}
+            disabled={isExporting}
+            className="h-12 px-6 rounded-2xl bg-white border border-slate-100 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
           >
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            {isExporting ? "Exporting..." : "Export PDF"}
-          </button>
-          {selectedIds.length > 0 && (
-            <button
-              onClick={() => setAssignModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-[linear-gradient(90deg,#7c3aed,#2563eb)] rounded-2xl transition-all font-[700] shadow-[0_16px_32px_rgba(76,29,149,0.24)]"
-            >
-              <UserCheck className="w-4 h-4" /> Assign {selectedIds.length}{" "}
-              selected
-            </button>
-          )}
+            {isExporting ? <RefreshCw className="animate-spin" size={14} /> : <Download size={14} />}
+            Export PDF
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setAssignModalOpen(true)}
+            disabled={selectedIds.length === 0}
+            className="h-12 px-8 rounded-2xl bg-slate-900 text-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition-all disabled:opacity-50 disabled:shadow-none"
+          >
+            <UserCheck size={16} />
+            Assign Batch ({selectedIds.length})
+          </motion.button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-4">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search ID, address, category..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-violet-400 transition-colors"
-            />
+      {/* Stats Summary Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Pending Load", value: complaints.filter(c => !["Resolved", "Closed"].includes(c.status)).length, color: "text-slate-900", bg: "bg-white", border: "border-slate-900" },
+          { label: "SLA Breached", value: complaints.filter(c => c.slaRemainingHours < 0 && !["Resolved", "Closed"].includes(c.status)).length, color: "text-rose-600", bg: "bg-white", border: "border-rose-500" },
+          { label: "At Risk", value: complaints.filter(c => c.slaRemainingHours >= 0 && c.slaRemainingHours < 12 && !["Resolved", "Closed"].includes(c.status)).length, color: "text-amber-600", bg: "bg-white", border: "border-amber-500" },
+          { label: "Priority Escalated", value: complaints.filter(c => c.escalated).length, color: "text-violet-600", bg: "bg-white", border: "border-violet-600" }
+        ].map((stat, i) => (
+          <div key={i} className={`p-5 rounded-[2rem] border border-l-[6px] border-slate-100 ${stat.border} ${stat.bg} shadow-lg shadow-slate-200/40`}>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{stat.label}</p>
+            <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
           </div>
-          <select
-            value={filterSLA}
-            onChange={(e) => setFilterSLA(e.target.value)}
-            className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none text-slate-700 cursor-pointer"
-          >
-            <option value="All">All SLA Status</option>
-            <option value="Breached">Breached</option>
-            <option value="At Risk">At Risk</option>
-            <option value="On Track">On Track</option>
-          </select>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none text-slate-700 cursor-pointer"
-          >
-            {categories.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-          <select
-            value={filterWard}
-            onChange={(e) => setFilterWard(e.target.value)}
-            className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none text-slate-700 cursor-pointer"
-          >
-            {wards.map((w) => (
-              <option key={w}>{w}</option>
-            ))}
-          </select>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-sm p-3 flex flex-wrap gap-4 items-center">
+        <div className="relative flex-1 min-w-[280px] group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
+          <input
+            type="text"
+            placeholder="Filter queue by location, identifier, or details..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-14 pl-14 pr-6 text-sm font-bold bg-slate-50/50 border border-slate-100 rounded-2xl focus:outline-none focus:bg-white focus:border-indigo-200 transition-all"
+          />
+        </div>
+        <div className="flex gap-2 p-1 bg-slate-50/50 rounded-[1.25rem] border border-slate-100">
+          {[
+            { id: "All", label: "Registry" },
+            { id: "Risk", label: "At Risk" },
+            { id: "Breached", label: "Breached" }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterSLA(tab.id)}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                filterSLA === tab.id ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Table */}
       <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
         {/* Table Header */}
-        <div className="flex items-center gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-          <input
-            type="checkbox"
-            checked={
-              selectedIds.length === filtered.length && filtered.length > 0
-            }
-            onChange={toggleAll}
-            className="w-4 h-4 rounded cursor-pointer accent-violet-600"
-          />
-          <div className="flex-1">Complaint</div>
-          <div className="hidden md:block w-24">Category</div>
-          <div className="hidden lg:block w-28">Priority</div>
-          <div className="hidden md:block w-28">SLA Status</div>
-          <div className="w-24">Status</div>
-          <div className="w-8"></div>
+      {/* Complaint List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <LayoutGrid size={18} className="text-slate-400" />
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Dispatch Registry</h2>
+          </div>
+          <div className="flex items-center gap-2">
+             <input
+              type="checkbox"
+              checked={selectedIds.length === filtered.length && filtered.length > 0}
+              onChange={toggleAll}
+              className="w-4 h-4 rounded cursor-pointer accent-indigo-600"
+            />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select All</span>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="text-4xl mb-3">🔍</div>
-            <div className="text-sm text-slate-500">
-              No complaints match your filters
+          <div className="rounded-[3rem] border-4 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center p-20 text-center">
+            <div className="h-20 w-20 bg-white rounded-[2rem] shadow-sm flex items-center justify-center mb-6 text-slate-200">
+              <Inbox size={40} />
             </div>
+            <p className="text-lg font-black text-slate-900 tracking-tight">
+              Queue is Clear
+            </p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+              No pending complaints matching your filters
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-50">
+          <div className="grid gap-4">
             {filtered.map((c, i) => {
               const sla = slaStatus(c.slaRemainingHours, c.status);
               const prio = priorityBadge(c.priorityScore);
@@ -384,235 +351,206 @@ export default function AdminQueue() {
               return (
                 <motion.div
                   key={c.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.03 }}
-                  className={`flex items-center gap-3 px-5 py-4 hover:bg-slate-50 transition-colors relative ${isSelected ? "bg-violet-50" : ""}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                  onClick={() => toggleSelect(c.id)}
+                  className={`group relative rounded-[2rem] border transition-all cursor-pointer p-6 flex items-center gap-6 overflow-hidden ${
+                    isSelected
+                      ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-600/5"
+                      : "border-slate-50 bg-white hover:border-indigo-100 hover:shadow-xl hover:shadow-slate-200/50"
+                  }`}
                 >
                   {/* SLA Urgency Indicator */}
                   {!["Resolved", "Closed"].includes(c.status) && (
                     <div 
-                      className={`absolute left-0 top-0 bottom-0 w-1 ${
-                        c.slaRemainingHours < 0 ? "bg-red-600 animate-pulse" : 
+                      className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                        c.slaRemainingHours < 0 ? "bg-rose-600 animate-pulse" : 
                         c.slaRemainingHours < 12 ? "bg-amber-500" : 
                         "bg-emerald-500"
                       }`} 
                     />
                   )}
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSelect(c.id)}
-                    className="w-4 h-4 rounded cursor-pointer accent-violet-600"
-                    onClick={(e) => e.stopPropagation()}
-                  />
 
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => navigate(`/admin/queue/${c.id}`)}
-                  >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-[700] text-slate-800">
-                        {c.id}
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                    isSelected ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30" : "bg-slate-50 text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-600"
+                  }`}>
+                    {isSelected ? <CheckCircle size={20} /> : <div className="h-5 w-5 rounded-md border-2 border-slate-200" />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="text-[10px] font-black text-slate-300 tracking-widest uppercase">#{c.id.slice(-6).toUpperCase()}</span>
+                      <div className="h-1 w-1 rounded-full bg-slate-200" />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${prio.class} px-2 py-0.5 rounded-md`}>
+                        {prio.label} Priority
                       </span>
                       {c.escalated && (
-                        <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-[700]">
-                          🔴 Escalated
-                        </span>
+                        <>
+                          <div className="h-1 w-1 rounded-full bg-slate-200" />
+                          <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest animate-pulse">Escalated</span>
+                        </>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{c.address}</span>
-                    </div>
-                  </div>
-
-                  <div className="hidden md:block w-24">
-                    <span className="text-xs font-[600] text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                      {c.category}
-                    </span>
-                  </div>
-
-                  <div className="hidden lg:flex items-center gap-1.5 w-28">
-                    <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${c.priorityScore >= 0.75 ? "bg-red-500" : c.priorityScore >= 0.4 ? "bg-amber-500" : "bg-slate-400"}`}
-                        style={{ width: `${c.priorityScore * 100}%` }}
-                      />
-                    </div>
-                    <span
-                      className={`text-xs font-[700] px-1.5 py-0.5 rounded ${prio.class}`}
-                    >
-                      {prio.label}
-                    </span>
-                  </div>
-
-                  <div className="hidden md:block w-28">
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-[600] border ${sla.class}`}
-                    >
-                      {sla.label}
-                    </span>
-                    {!["Resolved", "Closed"].includes(c.status) && (
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {c.slaRemainingHours < 0
-                          ? `${Math.abs(c.slaRemainingHours)}h over`
-                          : `${c.slaRemainingHours}h left`}
+                    <h3 className="text-lg font-black text-slate-900 truncate tracking-tight group-hover:text-indigo-600 transition-colors">
+                      {c.address}
+                    </h3>
+                    <div className="flex items-center gap-4 mt-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <MapPin size={12} className="text-slate-300" />
+                        {c.ward || "Global Ward"}
                       </div>
-                    )}
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <Clock size={12} className="text-slate-300" />
+                        {new Date(c.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="w-24">
-                    {c.status === "Rejected" ? (
+                  <div className="text-right">
+                    <div className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${sla.class}`}>
+                      {sla.label} · {c.slaRemainingHours}h
+                    </div>
+                    <div className="mt-2 flex justify-end gap-2">
+                       {c.status === "Rejected" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRejectedComplaint(c);
+                            setReassignModalOpen(true);
+                          }}
+                          className="h-9 px-4 rounded-xl bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                        >
+                          Reassign Rejected
+                        </button>
+                      )}
                       <button
-                        onClick={() => {
-                          setSelectedRejectedComplaint(c);
-                          setReassignModalOpen(true);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/complaint/${c.id}`);
                         }}
-                        className="text-xs px-2 py-1 rounded-full font-[600] bg-pink-100 text-pink-700 hover:bg-pink-200 transition-all cursor-pointer"
+                        className="h-9 w-9 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all shadow-sm"
                       >
-                        {c.status}
+                        <MoreHorizontal size={18} />
                       </button>
-                    ) : (
-                      <span
-                        className={`inline-block text-xs px-2 py-1 rounded-full font-[600] ${
-                          c.status === "Resolved" || c.status === "Closed"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : c.status === "In Progress"
-                              ? "bg-amber-100 text-amber-700"
-                              : c.status === "Escalated"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {c.status}
-                      </span>
-                    )}
+                    </div>
                   </div>
-
-                  <button className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
                 </motion.div>
               );
             })}
           </div>
         )}
       </div>
+      </div>
 
       {/* Reassign Rejected Complaint Modal */}
       {reassignModalOpen && selectedRejectedComplaint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/95 backdrop-blur-xl rounded-[1.85rem] p-6 max-w-md w-full shadow-[0_24px_60px_rgba(15,23,42,0.28)] border border-white"
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-white rounded-[3rem] p-10 max-w-xl w-full shadow-[0_40px_100px_rgba(0,0,0,0.2)] border border-slate-50 relative"
           >
-            <h3 className="text-lg font-[700] text-slate-900 mb-2">
-              Reassign Rejected Complaint
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              ID: {selectedRejectedComplaint.id}
-            </p>
-            <div className="text-sm text-slate-700 mb-4 p-3 bg-pink-50 rounded-xl border border-pink-100">
-              <strong>Category:</strong> {selectedRejectedComplaint.category}
-              <br />
-              <strong>Location:</strong> {selectedRejectedComplaint.address}
-              <br />
-              <strong>Status:</strong> {selectedRejectedComplaint.status}
-            </div>
-            <p className="text-xs text-slate-600 font-[600] mb-3">
-              Select a manager to reassign:
-            </p>
-            <div className="space-y-2 mb-5 max-h-64 overflow-y-auto">
-              {MOCK_MANAGERS.map((mgr) => (
-                <label
-                  key={mgr.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    selectedReassignManager === mgr.id
-                      ? "bg-violet-50 border-violet-200"
-                      : "border-slate-100 hover:bg-slate-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="reassign-manager"
-                    value={mgr.id}
-                    checked={selectedReassignManager === mgr.id}
-                    onChange={() => setSelectedReassignManager(mgr.id)}
-                    className="accent-violet-600"
-                  />
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xs font-[700]">
-                    {mgr.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-[600] text-slate-800">
-                      {mgr.name}
-                    </div>
-                    <div className="text-xs text-slate-400">{mgr.state}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={async () => {
-                  if (!selectedReassignManager || !selectedRejectedComplaint)
-                    return;
-
-                  setReassignLoading(true);
-                  try {
-                    const manager = MOCK_MANAGERS.find(
-                      (m) => m.id === selectedReassignManager,
-                    );
-                    if (!manager) {
-                      toast.error("Manager not found");
-                      return;
-                    }
-
-                    // Reassign complaint to new manager
-                    await api.patch(
-                      `/api/complaints/${selectedRejectedComplaint.id}/assign`,
-                      {
-                        managerId: selectedReassignManager,
-                        managerName: manager.name,
-                      },
-                    );
-
-                    toast.success(`Complaint reassigned to ${manager.name}`);
-
-                    // Refresh complaints list
-                    const data = await appwriteService.getAllComplaints();
-                    setComplaints(data);
-
-                    setReassignModalOpen(false);
-                    setSelectedRejectedComplaint(null);
-                    setSelectedReassignManager("");
-                  } catch (error) {
-                    console.error("Reassignment error:", error);
-                    toast.error("Failed to reassign complaint");
-                  } finally {
-                    setReassignLoading(false);
-                  }
-                }}
-                className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-[600] rounded-xl transition-colors disabled:opacity-40"
-                disabled={!selectedReassignManager || reassignLoading}
-              >
-                {reassignLoading ? "Reassigning..." : "Confirm Reassignment"}
-              </button>
-              <button
+            <div className="absolute top-8 right-8">
+               <button
                 onClick={() => {
                   setReassignModalOpen(false);
                   setSelectedRejectedComplaint(null);
                   setSelectedReassignManager("");
                 }}
-                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-[500] rounded-xl transition-colors"
+                className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-all"
               >
-                Cancel
+                <X size={20} />
               </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-600 mb-2">Operational Protocol</div>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Reassign Rejected</h3>
+                <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                  ID: #{selectedRejectedComplaint.id.slice(-6).toUpperCase()}
+                </p>
+              </div>
+
+              <div className="p-6 rounded-[2rem] bg-rose-50 border border-rose-100 space-y-3">
+                 <div className="flex items-center gap-3">
+                   <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-rose-600 shadow-sm">
+                     <AlertTriangle size={20} />
+                   </div>
+                   <div className="text-sm font-black text-rose-900 tracking-tight">Rejection Override Required</div>
+                 </div>
+                 <p className="text-xs font-bold text-rose-700/60 leading-relaxed uppercase tracking-widest">
+                   Complaint for {selectedRejectedComplaint.address} was returned by the previous officer. Select a new dispatch manager to resume resolution.
+                 </p>
+              </div>
+
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                {MOCK_MANAGERS.map((mgr) => (
+                  <label
+                    key={mgr.id}
+                    className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all cursor-pointer ${
+                      selectedReassignManager === mgr.id
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20"
+                        : "border-slate-100 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="reassign-manager"
+                      value={mgr.id}
+                      checked={selectedReassignManager === mgr.id}
+                      onChange={() => setSelectedReassignManager(mgr.id)}
+                      className="hidden"
+                    />
+                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm ${
+                      selectedReassignManager === mgr.id ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"
+                    }`}>
+                      {mgr.name.split(" ").map(n => n[0]).join("")}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-black tracking-tight ${selectedReassignManager === mgr.id ? "text-white" : "text-slate-900"}`}>
+                        {mgr.name}
+                      </div>
+                      <div className={`text-[10px] font-black uppercase tracking-widest ${selectedReassignManager === mgr.id ? "text-white/60" : "text-slate-400"}`}>
+                        {mgr.state}
+                      </div>
+                    </div>
+                    {selectedReassignManager === mgr.id && <CheckCircle size={20} />}
+                  </label>
+                ))}
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={async () => {
+                  if (!selectedReassignManager || !selectedRejectedComplaint) return;
+                  setReassignLoading(true);
+                  try {
+                    const manager = MOCK_MANAGERS.find(m => m.id === selectedReassignManager);
+                    if (!manager) return;
+                    await api.patch(`/api/complaints/${selectedRejectedComplaint.id}/assign`, {
+                      managerId: selectedReassignManager,
+                      managerName: manager.name,
+                    });
+                    toast.success(`Protocol Updated: Reassigned to ${manager.name}`);
+                    const data = await appwriteService.getAllComplaints();
+                    setComplaints(data);
+                    setReassignModalOpen(false);
+                    setSelectedRejectedComplaint(null);
+                    setSelectedReassignManager("");
+                  } catch (error) {
+                    toast.error("Protocol Error: Reassignment failed");
+                  } finally {
+                    setReassignLoading(false);
+                  }
+                }}
+                className="w-full h-16 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:bg-slate-800 transition-all disabled:opacity-40"
+                disabled={!selectedReassignManager || reassignLoading}
+              >
+                {reassignLoading ? "Processing Protocol..." : "Confirm Reassignment"}
+              </motion.button>
             </div>
           </motion.div>
         </div>
@@ -620,107 +558,101 @@ export default function AdminQueue() {
 
       {/* Assign Modal */}
       {assignModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/95 backdrop-blur-xl rounded-[1.85rem] p-6 max-w-md w-full shadow-[0_24px_60px_rgba(15,23,42,0.28)] border border-white"
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-white rounded-[3rem] p-10 max-w-xl w-full shadow-[0_40px_100px_rgba(0,0,0,0.2)] border border-slate-50 relative"
           >
-            <h3 className="text-lg font-[700] text-slate-900 mb-4">
-              Assign {selectedIds.length} Complaint
-              {selectedIds.length > 1 ? "s" : ""}
-            </h3>
-            <div className="text-xs text-slate-500 mb-4">
-              IDs: {selectedIds.join(", ")}
-            </div>
-            <div className="space-y-2 mb-5">
-              {MOCK_MANAGERS.map((mgr) => (
-                <label
-                  key={mgr.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    selectedOfficer === mgr.id
-                      ? "bg-violet-50 border-violet-200"
-                      : "border-slate-100 hover:bg-slate-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="officer"
-                    value={mgr.id}
-                    checked={selectedOfficer === mgr.id}
-                    onChange={() => setSelectedOfficer(mgr.id)}
-                    className="accent-violet-600"
-                  />
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xs font-[700]">
-                    {mgr.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-[600] text-slate-800">
-                      {mgr.name}
-                    </div>
-                    <div className="text-xs text-slate-400">{mgr.state}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={async () => {
-                  if (!selectedOfficer) return;
-
-                  const manager = MOCK_MANAGERS.find(
-                    (m) => m.id === selectedOfficer,
-                  );
-                  if (!manager) {
-                    toast.error("Manager not found");
-                    return;
-                  }
-
-                  const idsToAssign = [...selectedIds];
-
-                  // Optimistic UI Update
-                  setComplaints((prev) =>
-                    prev.map((c) =>
-                      idsToAssign.includes(c.id)
-                        ? { ...c, status: "Assigned", assignedManager: manager.name }
-                        : c,
-                    ),
-                  );
+            <div className="absolute top-8 right-8">
+               <button
+                onClick={() => {
                   setAssignModalOpen(false);
-                  setSelectedIds([]);
                   setSelectedOfficer("");
-                  toast.success(`Assigning ${idsToAssign.length} complaints...`);
+                }}
+                className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-                  // Background API calls
+            <div className="space-y-6">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 mb-2">Batch Operations</div>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Assign {selectedIds.length} Tickets</h3>
+                <p className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-widest">
+                  Targets: {selectedIds.length > 3 ? `${selectedIds.length} Complaints` : selectedIds.join(", ")}
+                </p>
+              </div>
+
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                {MOCK_MANAGERS.map((mgr) => (
+                  <label
+                    key={mgr.id}
+                    className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all cursor-pointer ${
+                      selectedOfficer === mgr.id
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20"
+                        : "border-slate-100 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="officer"
+                      value={mgr.id}
+                      checked={selectedOfficer === mgr.id}
+                      onChange={() => setSelectedOfficer(mgr.id)}
+                      className="hidden"
+                    />
+                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm ${
+                      selectedOfficer === mgr.id ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"
+                    }`}>
+                      {mgr.name.split(" ").map(n => n[0]).join("")}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-black tracking-tight ${selectedOfficer === mgr.id ? "text-white" : "text-slate-900"}`}>
+                        {mgr.name}
+                      </div>
+                      <div className={`text-[10px] font-black uppercase tracking-widest ${selectedOfficer === mgr.id ? "text-white/60" : "text-slate-400"}`}>
+                        {mgr.state}
+                      </div>
+                    </div>
+                    {selectedOfficer === mgr.id && <CheckCircle size={20} />}
+                  </label>
+                ))}
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={async () => {
+                  if (!selectedOfficer || selectedIds.length === 0) return;
+                  setAssignLoading(true);
                   try {
-                    for (const complaintId of idsToAssign) {
-                      await api.patch(`/api/complaints/${complaintId}/assign`, {
+                    const officer = MOCK_MANAGERS.find(m => m.id === selectedOfficer);
+                    if (!officer) return;
+                    await Promise.all(selectedIds.map(id => 
+                      api.patch(`/api/complaints/${id}/assign`, {
                         managerId: selectedOfficer,
-                        managerName: manager.name,
-                      });
-                    }
-                    toast.success(
-                      `Successfully assigned ${idsToAssign.length} complaint${idsToAssign.length > 1 ? "s" : ""} to ${manager.name}`,
-                    );
+                        managerName: officer.name,
+                      })
+                    ));
+                    toast.success(`Success: ${selectedIds.length} tickets assigned to ${officer.name}`);
+                    const data = await appwriteService.getAllComplaints();
+                    setComplaints(data);
+                    setAssignModalOpen(false);
+                    setSelectedOfficer("");
+                    setSelectedIds([]);
                   } catch (error) {
-                    console.error("Assignment error:", error);
-                    toast.error("Some assignments failed to sync with the server.");
+                    toast.error("Assignment Error: Batch operation failed");
+                  } finally {
+                    setAssignLoading(false);
                   }
                 }}
-                className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-[600] rounded-xl transition-colors disabled:opacity-40"
+                className="w-full h-16 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:bg-slate-800 transition-all disabled:opacity-40"
                 disabled={!selectedOfficer || assignLoading}
               >
-                {assignLoading ? "Assigning..." : "Confirm Assignment"}
-              </button>
-              <button
-                onClick={() => setAssignModalOpen(false)}
-                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-[500] rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
+                {assignLoading ? "Processing Batch..." : "Authorize Dispatch"}
+              </motion.button>
             </div>
           </motion.div>
         </div>

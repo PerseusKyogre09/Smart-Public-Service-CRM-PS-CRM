@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { motion } from "motion/react";
-import { Clock, Edit3, Save, X, Info, AlertTriangle } from "lucide-react";
+import { Clock, Edit3, Save, X, Info, AlertTriangle, ShieldCheck, Settings2 } from "lucide-react";
+import { Skeleton } from "../../components/ui/skeleton";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { slaConfig } from "../../data/mockData";
 
 export default function AdminSLA() {
@@ -29,61 +30,99 @@ export default function AdminSLA() {
       ),
     );
   };
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading for skeleton beauty
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-[800] text-[#ffcbd1]">
-          SLA Configuration
-        </h1>
-        <p className="text-white/90 text-sm mt-1">
-          Configure service level agreements per complaint category
-        </p>
-      </div>
+    <>
+      {loading ? (
+        <div className="max-w-4xl mx-auto space-y-8 animate-pulse">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64 rounded-xl" />
+            <Skeleton className="h-4 w-48 rounded-lg" />
+          </div>
+          <Skeleton className="h-20 w-full rounded-[2rem]" />
+          <div className="bg-white rounded-[2rem] border border-slate-50 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex justify-between">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+            <div className="p-8 space-y-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-4xl mx-auto space-y-10 pb-12">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                  <Settings2 size={20} />
+                </div>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
+                  SLA Governance
+                </h1>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">
+                Service Level Protocols · Response Optimization
+              </p>
+            </div>
+          </div>
 
       {/* Info Banner */}
-      <div className="bg-[linear-gradient(90deg,rgba(239,246,255,0.96),rgba(255,255,255,0.92))] border border-sky-200 rounded-[1.75rem] p-4 flex gap-3 shadow-[0_18px_40px_rgba(14,165,233,0.08)]">
-        <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+      <div className="bg-white/80 backdrop-blur-md border border-slate-50 rounded-[2.5rem] p-8 flex gap-6 shadow-[0_20px_50px_rgba(0,0,0,0.03)] group">
+        <div className="h-14 w-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+          <ShieldCheck size={28} />
+        </div>
         <div>
-          <div className="text-sm font-[600] text-blue-800">
-            Public SLA Visibility
+          <div className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1">Policy Transparency</div>
+          <div className="text-lg font-black text-slate-900 tracking-tight">
+            Public Response Commitments
           </div>
-          <div className="text-xs text-blue-600 mt-0.5">
-            Citizens see the SLA deadline for their complaint category at
-            submission time. Changes to SLA apply to new complaints only.
+          <div className="text-xs font-bold text-slate-400 mt-1 leading-relaxed">
+            Citizens see these deadlines in real-time. Changes to protocols will apply to <span className="text-sky-600">newly registered tickets</span> only, preserving legacy data integrity.
           </div>
         </div>
       </div>
 
       {/* SLA Table */}
-      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h3 className="text-base font-[700] text-slate-900">
-            SLA Rules by Category
-          </h3>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-[600]">
-            Times in hours
+      <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-[0_20px_60px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div className="flex items-center justify-between p-8 border-b border-slate-50">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Protocol Matrix</div>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Rules by Category</h3>
+          </div>
+          <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-full uppercase tracking-widest">
+            Unit: Hours
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-5 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Category
+              <tr className="bg-slate-900 border-b border-slate-800">
+                <th className="text-left px-8 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Category sector
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Default SLA
+                <th className="text-center px-6 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Standard Response
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Escalation SLA
+                <th className="text-center px-6 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Escalation Window
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Emergency SLA
+                <th className="text-center px-6 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Critical Breach
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Action
+                <th className="text-center px-8 py-5 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                  Operational Controls
                 </th>
               </tr>
             </thead>
@@ -226,8 +265,10 @@ export default function AdminSLA() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
-    </div>
+      )}
+    </>
   );
 }
