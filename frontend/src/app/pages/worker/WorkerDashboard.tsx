@@ -486,6 +486,19 @@ export default function WorkerDashboard() {
                             <span className="text-sm">Start Task</span>
                           </button>
                         )}
+                        {task.status === "In Progress" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTask(task);
+                              setShowResolveModal(true);
+                            }}
+                            className="h-12 px-8 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+                          >
+                            <Check size={18} />
+                            <span className="text-sm">Finish Task</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

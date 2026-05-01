@@ -141,8 +141,10 @@ async def smart_assign(request: SmartAssignRequest):
     3. **Location & Expertise**: Prefer workers whose primary area matches the complaint or who have relevant experience implied by the category.
     
     Respond STRICTLY in JSON format with two keys:
-    - "recommendedWorkerId": The ID of the best worker.
+    - "recommendedWorkerId": The exact ID (e.g. WKR-DEL-01) of the best worker from the list provided above. DO NOT return the name.
     - "reasoning": A brief (1-2 sentence) explanation. Mention both the worker's EXCELLENT rating and their load.
+    
+    If no worker is perfectly suitable, you MUST still pick the best available one from the provided list. Never return an ID that was not provided in the list.
     """
 
     async with httpx.AsyncClient() as client:

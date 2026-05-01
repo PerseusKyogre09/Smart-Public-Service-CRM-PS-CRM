@@ -204,7 +204,22 @@ export default function ManagerOverview() {
           }))
         });
 
-        const selectedWorker = stateWorkers.find(w => w.id === result.recommendedWorkerId);
+        // Robust matching: Try ID first, then Name, then fallback to best available
+        const workerId = result.recommendedWorkerId?.toString().trim();
+        let selectedWorker = stateWorkers.find(w => w.id === workerId);
+        
+        if (!selectedWorker) {
+          selectedWorker = stateWorkers.find(w => 
+            w.name.toLowerCase() === workerId?.toLowerCase()
+          );
+        }
+
+        // Final fallback: If AI failed or returned non-existent worker, pick best locally
+        if (!selectedWorker && stateWorkers.length > 0) {
+          selectedWorker = [...stateWorkers].sort((a, b) => (a.activeTasks || 0) - (b.activeTasks || 0) || b.rating - a.rating)[0];
+          result.reasoning = `AI recommendation failed or worker not found. Fallback: ${result.reasoning}`;
+        }
+
         if (!selectedWorker) continue;
 
         await api.patch(`/api/complaints/${complaint.id}/status`, {

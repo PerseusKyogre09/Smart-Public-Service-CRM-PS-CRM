@@ -76,7 +76,7 @@ export const SLATimer: React.FC<SLATimerProps> = ({
 
     if (!timeLeft) return null;
 
-    const { hours, minutes, seconds, isOverdue } = timeLeft;
+    const { hours, minutes, seconds, isOverdue, progress } = timeLeft;
 
     // Determine colors based on remaining time
     let textColor = "text-emerald-600";
