@@ -83,7 +83,6 @@ export default function LoginPage() {
       }
 
       const labels = user.labels || [];
-      console.log("Logged in user labels:", labels);
 
       // 3. Determine role based on labels (prioritize admin > manager > worker)
       let role = "citizen";

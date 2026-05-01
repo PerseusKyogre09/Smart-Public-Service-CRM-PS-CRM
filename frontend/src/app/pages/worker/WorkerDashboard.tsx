@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { api } from "../../api";
 import { account } from "../../appwrite";
 import { SLATimer } from "../../components/SLATimer";
-import { Complaint } from "../../data/mockData";
 
 interface WorkerTask {
   id: string;

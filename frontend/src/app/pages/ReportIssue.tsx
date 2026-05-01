@@ -797,7 +797,6 @@ export default function ReportIssue() {
             reportPhotoUrl,
           );
 
-          console.log("Report card generated and linked successfully");
         } catch (genError) {
           console.error("Failed to generate/upload report card:", genError);
         } finally {

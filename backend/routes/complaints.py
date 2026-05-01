@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from datetime import datetime, timedelta, UTC
 from typing import Optional
@@ -10,6 +11,7 @@ from appwrite_client import databases, DATABASE_ID, COLLECTION_ID, MANAGERS_COLL
 from geopy.geocoders import Nominatim
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
+logger = logging.getLogger(__name__)
 
 # Geocoder for reverse-geocoding state from coordinates
 geolocator = Nominatim(user_agent="smart_crm_ps_crm")
@@ -32,7 +34,7 @@ def assign_manager_to_complaint(complaint_state: str) -> dict:
             mgr_doc = resp["documents"][0]
             return {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
     except Exception as e:
-        print(f"DB_FAST_MANAGER_FETCH_ERROR: {e}")
+        logger.error(f"DB_FAST_MANAGER_FETCH_ERROR: {e}")
 
     # Fallback Path: Original counting logic if activeComplaints approach fails
     try:
@@ -42,7 +44,7 @@ def assign_manager_to_complaint(complaint_state: str) -> dict:
         )
         state_managers = resp.get("documents", [])
     except Exception as e:
-        print(f"DB_MANAGER_FETCH_ERROR: {e}")
+        logger.error(f"DB_MANAGER_FETCH_ERROR: {e}")
         state_managers = []
 
     if not state_managers:
@@ -83,7 +85,7 @@ def update_manager_workload(manager_id: str, delta: int):
             "activeComplaints": new_count
         })
     except Exception as e:
-        print(f"WORKLOAD_UPDATE_ERROR for {manager_id}: {e}")
+        logger.error(f"WORKLOAD_UPDATE_ERROR for {manager_id}: {e}")
 
 
 # ── Business Logic ─────────────────────────────────────────────────────────────
@@ -390,7 +392,7 @@ def _update_worker_rating(worker_name: str, new_rating: Optional[float] = None, 
             queries=[Query.equal("name", worker_name), Query.limit(1)]
         )
         if not resp.get("documents"):
-            print(f"WORKER_NOT_FOUND_FOR_RATING: {worker_name}")
+            logger.warning(f"WORKER_NOT_FOUND_FOR_RATING: {worker_name}")
             return
         
         worker_doc = resp["documents"][0]
@@ -421,9 +423,9 @@ def _update_worker_rating(worker_name: str, new_rating: Optional[float] = None, 
             "rating": new_average,
             "ratingCount": new_count
         })
-        print(f"WORKER_RATING_UPDATED: {worker_name} (Average: {new_average}, Count: {new_count})")
+        logger.info(f"WORKER_RATING_UPDATED: {worker_name} (Average: {new_average}, Count: {new_count})")
     except Exception as e:
-        print(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
+        logger.error(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
 
 
 @router.patch("/{complaint_id}/status")
@@ -525,7 +527,7 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         raise
     except Exception as e:
         import traceback
-        print(f"STATUS_UPDATE_ERROR: {str(e)}\n{traceback.format_exc()}")
+        logger.error(f"STATUS_UPDATE_ERROR: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -544,7 +546,7 @@ async def update_share_card(complaint_id: str, body: ShareCardUpdate):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"SHARE_CARD_UPDATE_ERROR: {str(e)}")
+        logger.error(f"SHARE_CARD_UPDATE_ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -596,7 +598,7 @@ async def assign_manager(complaint_id: str, body: AssignManager):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"ASSIGN_ERROR: {str(e)}")
+        logger.error(f"ASSIGN_ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
