@@ -360,11 +360,23 @@ export default function WorkerDashboard() {
                   exit={{ opacity: 0, x: -20 }}
                   key={task.id}
                   onClick={() => setSelectedTask(task)}
-                  className={`cursor-pointer rounded-2xl border p-5 transition-all ${selectedTask?.id === task.id
-                    ? "border-sky-500 bg-sky-50 shadow-md"
-                    : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
-                    }`}
+                  className={`cursor-pointer rounded-2xl border p-5 transition-all relative overflow-hidden ${
+                    selectedTask?.id === task.id
+                      ? "border-sky-500 bg-sky-50 shadow-md"
+                      : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                  }`}
                 >
+                  {/* SLA Urgency Indicator */}
+                  {(() => {
+                    const diff = new Date(task.slaDeadline || task.createdAt).getTime() - Date.now();
+                    const hours = diff / (1000 * 60 * 60);
+                    if (task.status === "Resolved" || task.status === "Closed") return null;
+                    
+                    if (diff <= 0) return <div className="absolute top-0 left-0 w-full h-1 bg-red-600 animate-pulse" />;
+                    if (hours < 12) return <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />;
+                    if (hours < 24) return <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />;
+                    return null;
+                  })()}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -423,17 +435,32 @@ export default function WorkerDashboard() {
                         <Phone size={12} /> Call
                       </a>
                     )}
-                    {task.status === "Assigned" && (
+                    <div className="flex gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStartWork(task);
+                          if (task.coordinates) {
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${task.coordinates.lat},${task.coordinates.lng}`, '_blank');
+                          } else {
+                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.address)}`, '_blank');
+                          }
                         }}
-                        className="flex items-center justify-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
                       >
-                        <AlertCircle size={12} /> Start
+                        <MapPin size={12} /> Navigate
                       </button>
-                    )}
+                      {task.status === "Assigned" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartWork(task);
+                          }}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition"
+                        >
+                          <AlertCircle size={12} /> Start
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               ))}

@@ -387,8 +387,18 @@ export default function AdminQueue() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`flex items-center gap-3 px-5 py-4 hover:bg-slate-50 transition-colors ${isSelected ? "bg-violet-50" : ""}`}
+                  className={`flex items-center gap-3 px-5 py-4 hover:bg-slate-50 transition-colors relative ${isSelected ? "bg-violet-50" : ""}`}
                 >
+                  {/* SLA Urgency Indicator */}
+                  {!["Resolved", "Closed"].includes(c.status) && (
+                    <div 
+                      className={`absolute left-0 top-0 bottom-0 w-1 ${
+                        c.slaRemainingHours < 0 ? "bg-red-600 animate-pulse" : 
+                        c.slaRemainingHours < 12 ? "bg-amber-500" : 
+                        "bg-emerald-500"
+                      }`} 
+                    />
+                  )}
                   <input
                     type="checkbox"
                     checked={isSelected}
