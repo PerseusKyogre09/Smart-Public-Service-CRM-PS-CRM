@@ -21,8 +21,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Delhi Specific Manager Mapping
 const MANAGER_STATE_MAP: {
@@ -149,6 +152,14 @@ export default function ReportIssue() {
   const [assignedManagerName, setAssignedManagerName] = useState("");
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    gsap.fromTo(".step-section", 
+      { opacity: 0, x: 20 },
+      { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }
+    );
+  }, { scope: containerRef, dependencies: [step] });
 
   // Live manager preview — recomputed whenever address/area text changes
   const managerPreview = useMemo(
@@ -811,27 +822,34 @@ export default function ReportIssue() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8" ref={containerRef}>
       <ReportCardTemplate />
       <section className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-blue-100 px-6 py-7 shadow-sm">
         <button
           onClick={() => navigate("/dashboard")}
-          className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-sky-700"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-sky-700 transition"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          Cancel
         </button>
-        <div className="space-y-2">
-          <span className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-100">
-            Report issue
-          </span>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            Report a civic issue
-          </h1>
-          <p className="max-w-2xl text-sm leading-6 text-slate-600">
-            A short, guided form to report the problem clearly. The flow is
-            simple: choose type, add location, describe it, and upload photos if
-            needed.
+        <div className="flex flex-col gap-4">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Report an issue</h1>
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                  step >= i ? "bg-sky-600 shadow-[0_0_10px_rgba(2,132,199,0.3)]" : "bg-slate-200"
+                }`}
+              />
+            ))}
+          </div>
+          <p className="text-sm font-medium text-slate-500">
+            STEP {step} OF 4: {
+              step === 1 ? "Select Category" : 
+              step === 2 ? "Location Details" : 
+              step === 3 ? "Description" : "Photos & Evidence"
+            }
           </p>
         </div>
       </section>
@@ -867,7 +885,8 @@ export default function ReportIssue() {
       </section>
 
       {step === 1 && (
-        <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="step-section space-y-6">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
             Choose category
           </h2>
@@ -945,11 +964,13 @@ export default function ReportIssue() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
+        </div>
         </section>
       )}
 
       {step === 2 && (
-        <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="step-section space-y-6">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Add location</h2>
           <p className="mt-1 text-sm text-slate-500">
             Share your location automatically or select it on a map.
@@ -1110,11 +1131,13 @@ export default function ReportIssue() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
+        </div>
         </section>
       )}
 
       {step === 3 && (
-        <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="step-section space-y-6">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
             Describe the issue
           </h2>
@@ -1157,11 +1180,13 @@ export default function ReportIssue() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
+        </div>
         </section>
       )}
 
       {step === 4 && (
-        <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="step-section space-y-6">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Add photos</h2>
           <p className="mt-1 text-sm text-slate-500">
             Photos are optional, but they help verify the issue quickly.
@@ -1249,11 +1274,12 @@ export default function ReportIssue() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
+        </div>
         </section>
       )}
 
       {step === 5 && (
-        <section className="rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <section className="step-section rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-sm">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
             <CheckCircle2 className="h-8 w-8" />
           </div>

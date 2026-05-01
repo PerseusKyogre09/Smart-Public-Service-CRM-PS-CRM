@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router";
 import { ChevronDown, LogOut, Menu, Plus, Shield, X } from "lucide-react";
 import { account } from "../../appwrite";
 import { authService } from "../../appwriteService";
+import { motion, AnimatePresence } from "framer-motion";
 import CivicAIAssistant from "./CivicAIAssistant";
 
 const navItems = [
@@ -22,6 +23,7 @@ function LogoMark() {
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications] = useState(3);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -69,10 +71,16 @@ export default function DashboardLayout() {
 
   return (
     <div
-      className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_100%)]"
+      className="min-h-screen relative overflow-hidden bg-slate-50"
       style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}
     >
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
+      {/* Premium Ambient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-sky-200/20 blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-200/20 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 lg:px-8">
           <div className="flex items-center gap-3">
             <LogoMark />
@@ -109,13 +117,15 @@ export default function DashboardLayout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/dashboard/report")}
-              className="hidden items-center gap-2 rounded-full bg-sky-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-800 sm:inline-flex"
+              className="hidden items-center gap-2 rounded-full bg-sky-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-800 sm:inline-flex shadow-lg shadow-sky-700/20"
             >
               <Plus className="h-4 w-4" />
               Report
-            </button>
+            </motion.button>
 
             <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 sm:flex">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
@@ -208,7 +218,17 @@ export default function DashboardLayout() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <CivicAIAssistant />

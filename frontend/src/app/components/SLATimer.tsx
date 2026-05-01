@@ -6,19 +6,22 @@ interface SLATimerProps {
     status: string;
     onOverdue?: () => void;
     showIcon?: boolean;
+    startTime?: string;
 }
 
 export const SLATimer: React.FC<SLATimerProps> = ({
     deadline,
     status,
     onOverdue,
-    showIcon = true
+    showIcon = true,
+    startTime
 }) => {
     const [timeLeft, setTimeLeft] = useState<{
         hours: number;
         minutes: number;
         seconds: number;
         isOverdue: boolean;
+        progress: number;
     } | null>(null);
 
     useEffect(() => {
@@ -39,7 +42,15 @@ export const SLATimer: React.FC<SLATimerProps> = ({
             const minutes = Math.floor((absoluteDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((absoluteDiff % (1000 * 60)) / 1000);
 
-            const newTimeLeft = { hours, minutes, seconds, isOverdue };
+            // Calculate progress if startTime is provided
+            let progress = 100;
+            if (startTime) {
+                const total = new Date(deadline).getTime() - new Date(startTime).getTime();
+                const elapsed = now.getTime() - new Date(startTime).getTime();
+                progress = Math.max(0, Math.min(100, (elapsed / total) * 100));
+            }
+
+            const newTimeLeft = { hours, minutes, seconds, isOverdue, progress };
 
             if (isOverdue && !timeLeft?.isOverdue && onOverdue) {
                 onOverdue();
@@ -95,6 +106,14 @@ export const SLATimer: React.FC<SLATimerProps> = ({
                 <span className="text-[11px] font-bold font-mono tracking-tight leading-none">
                     {isOverdue ? "-" : ""}{hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
                 </span>
+                {!isOverdue && progress !== 100 && (
+                    <div className="mt-1.5 h-1 w-20 bg-black/10 rounded-full overflow-hidden">
+                        <div 
+                            className={`h-full transition-all duration-1000 ${hours < 6 ? 'bg-red-500' : hours < 12 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

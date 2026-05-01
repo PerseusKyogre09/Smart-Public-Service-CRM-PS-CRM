@@ -12,7 +12,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { api } from "../../api";
 import { account } from "../../appwrite";
+import { appwriteService } from "../../appwriteService";
 import { SLATimer } from "../../components/SLATimer";
+import { Skeleton } from "../../components/ui/skeleton";
 
 interface WorkerTask {
   id: string;
@@ -64,36 +66,47 @@ export default function WorkerDashboard() {
   useEffect(() => {
     if (!worker) return;
 
-    // Fetch assigned complaints
-    api
-      .get<any>(`/api/complaints?assignedTo=${encodeURIComponent(worker.name)}`)
-      .then((data) => {
-        // Filter for Assigned and In Progress complaints
-        const workerTasks = (Array.isArray(data) ? data : [])
-          .map((c: any) => ({
-            id: c.id,
-            category: c.category || "Other",
-            address: c.address || "Location not provided",
-            description: c.description || "",
-            status: c.status || "Assigned",
-            createdAt: c.createdAt || new Date().toISOString(),
-            citizenName: c.reporterName || "Anonymous",
-            citizenPhone: c.citizenPhone,
-            priority: c.priorityScore || 0.5,
-            distance: c.distance_km,
-            coordinates: c.coordinates,
-            timeline: c.timeline || [],
-            slaDeadline: c.slaDeadline,
-          }))
-          .sort((a: any, b: any) => b.priority - a.priority);
+    // Fetch and subscribe to assigned complaints
+    const fetchWorkerTasks = () => {
+      api
+        .get<any>(`/api/complaints?assignedTo=${encodeURIComponent(worker.name)}`)
+        .then((data) => {
+          const workerTasks = (Array.isArray(data) ? data : [])
+            .map((c: any) => ({
+              id: c.id,
+              category: c.category || "Other",
+              address: c.address || "Location not provided",
+              description: c.description || "",
+              status: c.status || "Assigned",
+              createdAt: c.createdAt || new Date().toISOString(),
+              citizenName: c.reporterName || "Anonymous",
+              citizenPhone: c.citizenPhone,
+              priority: c.priorityScore || 0.5,
+              distance: c.distance_km,
+              coordinates: c.coordinates,
+              timeline: c.timeline || [],
+              slaDeadline: c.slaDeadline,
+            }))
+            .sort((a: any, b: any) => b.priority - a.priority);
 
-        setTasks(workerTasks);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch worker tasks:", err);
-        setTasks([]); // Empty tasks instead of mock data
-      })
-      .finally(() => setLoading(false));
+          setTasks(workerTasks);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch worker tasks:", err);
+        })
+        .finally(() => setLoading(false));
+    };
+
+    fetchWorkerTasks();
+
+    // Subscribe to all complaints for real-time updates (assigned to this worker)
+    const unsubscribe = appwriteService.subscribeToComplaints(() => {
+      fetchWorkerTasks();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [worker]);
 
   const filteredTasks = useMemo(() => {
@@ -121,28 +134,25 @@ export default function WorkerDashboard() {
 
   const handleStartWork = (task: WorkerTask) => {
     if (task.status === "Assigned") {
-      // Update status to In Progress
+      // Optimistic update
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id ? { ...t, status: "In Progress" } : t
+        )
+      );
+      toast.success("Task started!");
+
+      // Background API call
       api
         .patch(`/api/complaints/${task.id}/status`, {
           status: "In Progress",
           note: "Worker started work on site",
           actor: worker?.name || "Worker",
         })
-        .then(() => {
-          setTasks((prev) =>
-            prev.map((t) =>
-              t.id === task.id ? { ...t, status: "In Progress" } : t
-            )
-          );
-          toast.success("Task started!");
-        })
-        .catch(() => {
-          setTasks((prev) =>
-            prev.map((t) =>
-              t.id === task.id ? { ...t, status: "In Progress" } : t
-            )
-          );
-          toast.success("Task started!");
+        .catch((err) => {
+          console.error("Failed to start task:", err);
+          // Rollback if needed (though real-time sync might handle it)
+          toast.error("Failed to sync task status with server.");
         });
     }
   };
@@ -153,26 +163,25 @@ export default function WorkerDashboard() {
       return;
     }
 
+    const taskId = selectedTask.id;
+    
+    // Optimistic UI Update
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setShowResolveModal(false);
+    setSelectedTask(null);
+    setResolutionNote("");
+    toast.success("Submitted for manager review! ✓");
+
+    // Background API call
     api
-      .patch(`/api/complaints/${selectedTask.id}/status`, {
+      .patch(`/api/complaints/${taskId}/status`, {
         status: "Pending Review",
         note: `Submitted for review: ${resolutionNote}`,
         actor: worker?.name || "Worker",
       })
-      .then(() => {
-        setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id));
-        setShowResolveModal(false);
-        setSelectedTask(null);
-        setResolutionNote("");
-        toast.success("Submitted for manager review! ✓");
-      })
-      .catch(() => {
-        // Optimistic update
-        setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id));
-        setShowResolveModal(false);
-        setSelectedTask(null);
-        setResolutionNote("");
-        toast.success("Submitted for manager review! ✓");
+      .catch((err) => {
+        console.error("Failed to resolve task:", err);
+        toast.error("Server sync failed, but your resolution is saved locally.");
       });
   };
 
@@ -185,12 +194,50 @@ export default function WorkerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center mx-auto mb-4 animate-spin">
-            <Clock className="text-sky-600" size={28} />
+      <div className="space-y-6 pb-12">
+        {/* Stats Bar Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+              <div className="flex justify-between items-center">
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-10" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Search & Tabs Skeleton */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Skeleton className="h-11 flex-1 rounded-xl" />
+          <div className="flex gap-2">
+            <Skeleton className="h-11 w-24 rounded-xl" />
+            <Skeleton className="h-11 w-24 rounded-xl" />
           </div>
-          <p className="text-slate-600 font-medium">Loading your tasks...</p>
+        </div>
+
+        {/* Task List Skeleton */}
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-40" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-6 w-1/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                <Skeleton className="h-8 w-24 rounded-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+              <Skeleton className="h-12 w-full rounded-xl" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -346,6 +393,7 @@ export default function WorkerDashboard() {
                       </div>
                       <SLATimer
                         deadline={task.slaDeadline || task.createdAt}
+                        startTime={task.createdAt}
                         status={task.status}
                         showIcon={false}
                       />

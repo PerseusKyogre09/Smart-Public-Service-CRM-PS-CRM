@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
+import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "../components/ui/skeleton";
 
 const statusColor: Record<string, string> = {
   Submitted: "bg-slate-100 text-slate-700",
@@ -206,17 +208,73 @@ export default function CitizenHome() {
 
   if (loading && complaints.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-slate-50/50">
-        <div className="mb-4 h-12 w-12 rounded-full border-4 border-slate-200 border-t-sky-600 animate-spin" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-          Syncing Dashboard...
-        </p>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
+          <Skeleton className="h-4 w-32 rounded-full mb-4" />
+          <Skeleton className="h-8 w-64 mb-3" />
+          <Skeleton className="h-4 w-full max-w-xl" />
+          <div className="flex gap-3 mt-6">
+            <Skeleton className="h-12 w-32 rounded-full" />
+            <Skeleton className="h-12 w-32 rounded-full" />
+          </div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+              <Skeleton className="h-3 w-24 mb-3" />
+              <Skeleton className="h-8 w-12 mb-2" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+          {/* List Skeleton */}
+          <div className="bg-white rounded-[28px] border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+            <div className="divide-y divide-slate-50">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="p-5 flex items-center gap-4">
+                  <Skeleton className="h-10 w-10 rounded-xl" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Actions Skeleton */}
+          <div className="bg-white rounded-[28px] border border-slate-200 p-6 shadow-sm">
+            <Skeleton className="h-6 w-32 mb-6" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-4 rounded-2xl border border-slate-100">
+                  <Skeleton className="h-4 w-2/3 mb-2" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
       <section className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-blue-100 px-6 py-7 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-3">
@@ -246,20 +304,24 @@ export default function CitizenHome() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/dashboard/report")}
-              className="inline-flex items-center gap-2 rounded-full bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800"
+              className="inline-flex items-center gap-2 rounded-full bg-sky-700 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-sky-800 shadow-xl shadow-sky-700/20"
             >
               <Plus className="h-4 w-4" />
               Report issue
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/dashboard/complaints")}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 premium-shadow"
             >
               View complaints
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </motion.button>
           </div>
         </div>
       </section>
@@ -404,6 +466,6 @@ export default function CitizenHome() {
           </div>
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 }

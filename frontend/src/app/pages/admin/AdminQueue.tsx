@@ -16,6 +16,7 @@ import {
   UserCheck,
   Loader2,
 } from "lucide-react";
+import { Skeleton } from "../../components/ui/skeleton";
 import { appwriteService } from "../../appwriteService";
 import { api } from "../../api";
 import { exportDataToPDF } from "../../utils/pdfExport";
@@ -89,7 +90,15 @@ export default function AdminQueue() {
         setLoading(false);
       }
     };
+    
     fetchData();
+
+    // Real-time subscription
+    const unsubscribe = appwriteService.subscribeToComplaints((data) => {
+      setComplaints(data);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const filtered = complaints.filter((c) => {
@@ -111,8 +120,37 @@ export default function AdminQueue() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
-        Loading complaint queue...
+      <div className="space-y-5 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24 rounded-2xl" />
+            <Skeleton className="h-10 w-24 rounded-2xl" />
+          </div>
+        </div>
+        <Skeleton className="h-16 w-full rounded-[1.85rem]" />
+        <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-sm overflow-hidden">
+          <div className="px-5 py-3 bg-slate-50 border-b border-slate-100">
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="divide-y divide-slate-50">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="px-5 py-4 flex items-center gap-4">
+                <Skeleton className="h-4 w-4" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
 
@@ -623,40 +661,43 @@ export default function AdminQueue() {
                 onClick={async () => {
                   if (!selectedOfficer) return;
 
-                  setAssignLoading(true);
-                  try {
-                    const manager = MOCK_MANAGERS.find(
-                      (m) => m.id === selectedOfficer,
-                    );
-                    if (!manager) {
-                      toast.error("Manager not found");
-                      return;
-                    }
+                  const manager = MOCK_MANAGERS.find(
+                    (m) => m.id === selectedOfficer,
+                  );
+                  if (!manager) {
+                    toast.error("Manager not found");
+                    return;
+                  }
 
-                    // Assign each selected complaint to the manager
-                    for (const complaintId of selectedIds) {
+                  const idsToAssign = [...selectedIds];
+
+                  // Optimistic UI Update
+                  setComplaints((prev) =>
+                    prev.map((c) =>
+                      idsToAssign.includes(c.id)
+                        ? { ...c, status: "Assigned", assignedManager: manager.name }
+                        : c,
+                    ),
+                  );
+                  setAssignModalOpen(false);
+                  setSelectedIds([]);
+                  setSelectedOfficer("");
+                  toast.success(`Assigning ${idsToAssign.length} complaints...`);
+
+                  // Background API calls
+                  try {
+                    for (const complaintId of idsToAssign) {
                       await api.patch(`/api/complaints/${complaintId}/assign`, {
                         managerId: selectedOfficer,
                         managerName: manager.name,
                       });
                     }
-
                     toast.success(
-                      `Assigned ${selectedIds.length} complaint${selectedIds.length > 1 ? "s" : ""} to ${manager.name}`,
+                      `Successfully assigned ${idsToAssign.length} complaint${idsToAssign.length > 1 ? "s" : ""} to ${manager.name}`,
                     );
-
-                    // Refresh complaints list
-                    const data = await appwriteService.getAllComplaints();
-                    setComplaints(data);
-
-                    setAssignModalOpen(false);
-                    setSelectedIds([]);
-                    setSelectedOfficer("");
                   } catch (error) {
                     console.error("Assignment error:", error);
-                    toast.error("Failed to assign complaints");
-                  } finally {
-                    setAssignLoading(false);
+                    toast.error("Some assignments failed to sync with the server.");
                   }
                 }}
                 className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-[600] rounded-xl transition-colors disabled:opacity-40"
