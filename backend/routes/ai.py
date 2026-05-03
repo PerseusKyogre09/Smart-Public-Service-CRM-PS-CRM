@@ -1,6 +1,7 @@
 import os
 import httpx
 import json
+import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -9,6 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 router = APIRouter(prefix="/api/ai", tags=["AI"])
+logger = logging.getLogger(__name__)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -139,8 +141,10 @@ async def smart_assign(request: SmartAssignRequest):
     3. **Location & Expertise**: Prefer workers whose primary area matches the complaint or who have relevant experience implied by the category.
     
     Respond STRICTLY in JSON format with two keys:
-    - "recommendedWorkerId": The ID of the best worker.
+    - "recommendedWorkerId": The exact ID (e.g. WKR-DEL-01) of the best worker from the list provided above. DO NOT return the name.
     - "reasoning": A brief (1-2 sentence) explanation. Mention both the worker's EXCELLENT rating and their load.
+    
+    If no worker is perfectly suitable, you MUST still pick the best available one from the provided list. Never return an ID that was not provided in the list.
     """
 
     async with httpx.AsyncClient() as client:
@@ -168,7 +172,7 @@ async def smart_assign(request: SmartAssignRequest):
             ai_data = json.loads(data["choices"][0]["message"]["content"])
             return ai_data
         except Exception as e:
-            print(f"SMART_ASSIGN_ERROR: {str(e)}")
+            logger.error(f"SMART_ASSIGN_ERROR: {str(e)}")
             # Fallback logic if AI fails: Simplistic load balancing
             if not request.workers:
                 raise HTTPException(status_code=400, detail="No workers available for assignment")

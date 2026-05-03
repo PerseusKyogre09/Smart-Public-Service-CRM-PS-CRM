@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from datetime import datetime, timedelta, UTC
 from typing import Optional
@@ -10,6 +11,7 @@ from appwrite_client import databases, DATABASE_ID, COLLECTION_ID, MANAGERS_COLL
 from geopy.geocoders import Nominatim
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
+logger = logging.getLogger(__name__)
 
 # Geocoder for reverse-geocoding state from coordinates
 geolocator = Nominatim(user_agent="smart_crm_ps_crm")
@@ -32,7 +34,7 @@ def assign_manager_to_complaint(complaint_state: str) -> dict:
             mgr_doc = resp["documents"][0]
             return {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
     except Exception as e:
-        print(f"DB_FAST_MANAGER_FETCH_ERROR: {e}")
+        logger.error(f"DB_FAST_MANAGER_FETCH_ERROR: {e}")
 
     # Fallback Path: Original counting logic if activeComplaints approach fails
     try:
@@ -42,31 +44,48 @@ def assign_manager_to_complaint(complaint_state: str) -> dict:
         )
         state_managers = resp.get("documents", [])
     except Exception as e:
-        print(f"DB_MANAGER_FETCH_ERROR: {e}")
+        logger.error(f"DB_MANAGER_FETCH_ERROR: {e}")
         state_managers = []
 
     if not state_managers:
         return {"id": "SYSTEM", "name": "SystemAdmin"}
 
     manager_workloads = []
-    for mgr_doc in state_managers:
-        mgr = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
-        count = mgr_doc.get("activeComplaints")
-        if count is None:
-            try:
-                resp = databases.list_documents(
-                    DATABASE_ID, COLLECTION_ID,
-                    queries=[
-                        Query.equal("assignedManagerId", mgr["id"]),
-                        Query.not_equal("status", "Resolved"),
-                        Query.not_equal("status", "Closed"),
-                        Query.limit(1),  # we only need the total count
-                    ]
-                )
-                count = resp.get("total", 0)
-            except Exception:
-                count = 0
-        manager_workloads.append((mgr, count))
+    
+    # Optimized: Batch fetch all active complaints for this manager's state
+    # to count workloads in one go instead of N queries
+    try:
+        active_resp = databases.list_documents(
+            DATABASE_ID, COLLECTION_ID,
+            queries=[
+                Query.equal("state", complaint_state),
+                Query.not_equal("status", "Resolved"),
+                Query.not_equal("status", "Closed"),
+                Query.limit(1000)
+            ]
+        )
+        all_active = active_resp.get("documents", [])
+        
+        # Build memory map of workloads by managerId
+        state_workload_map = {}
+        for comp in all_active:
+            mgr_id = comp.get("assignedManagerId")
+            if mgr_id:
+                state_workload_map[mgr_id] = state_workload_map.get(mgr_id, 0) + 1
+        
+        for mgr_doc in state_managers:
+            mgr = {"id": mgr_doc["$id"], "name": mgr_doc["name"]}
+            # Use cached field if available, otherwise use our memory map
+            count = mgr_doc.get("activeComplaints")
+            if count is None:
+                count = state_workload_map.get(mgr["id"], 0)
+            manager_workloads.append((mgr, count))
+            
+    except Exception as e:
+        logger.error(f"BATCH_WORKLOAD_CALC_ERROR: {e}")
+        # Final fallback if batch fails
+        for mgr_doc in state_managers:
+            manager_workloads.append(({"id": mgr_doc["$id"], "name": mgr_doc["name"]}, 0))
 
     best_manager = min(manager_workloads, key=lambda x: x[1])[0]
     return best_manager
@@ -83,7 +102,7 @@ def update_manager_workload(manager_id: str, delta: int):
             "activeComplaints": new_count
         })
     except Exception as e:
-        print(f"WORKLOAD_UPDATE_ERROR for {manager_id}: {e}")
+        logger.error(f"WORKLOAD_UPDATE_ERROR for {manager_id}: {e}")
 
 
 # ── Business Logic ─────────────────────────────────────────────────────────────
@@ -390,7 +409,7 @@ def _update_worker_rating(worker_name: str, new_rating: Optional[float] = None, 
             queries=[Query.equal("name", worker_name), Query.limit(1)]
         )
         if not resp.get("documents"):
-            print(f"WORKER_NOT_FOUND_FOR_RATING: {worker_name}")
+            logger.warning(f"WORKER_NOT_FOUND_FOR_RATING: {worker_name}")
             return
         
         worker_doc = resp["documents"][0]
@@ -421,9 +440,9 @@ def _update_worker_rating(worker_name: str, new_rating: Optional[float] = None, 
             "rating": new_average,
             "ratingCount": new_count
         })
-        print(f"WORKER_RATING_UPDATED: {worker_name} (Average: {new_average}, Count: {new_count})")
+        logger.info(f"WORKER_RATING_UPDATED: {worker_name} (Average: {new_average}, Count: {new_count})")
     except Exception as e:
-        print(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
+        logger.error(f"WORKER_RATING_UPDATE_ERROR for {worker_name}: {e}")
 
 
 @router.patch("/{complaint_id}/status")
@@ -525,7 +544,7 @@ async def update_status(complaint_id: str, body: StatusUpdate):
         raise
     except Exception as e:
         import traceback
-        print(f"STATUS_UPDATE_ERROR: {str(e)}\n{traceback.format_exc()}")
+        logger.error(f"STATUS_UPDATE_ERROR: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -544,7 +563,7 @@ async def update_share_card(complaint_id: str, body: ShareCardUpdate):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"SHARE_CARD_UPDATE_ERROR: {str(e)}")
+        logger.error(f"SHARE_CARD_UPDATE_ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -596,7 +615,7 @@ async def assign_manager(complaint_id: str, body: AssignManager):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"ASSIGN_ERROR: {str(e)}")
+        logger.error(f"ASSIGN_ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

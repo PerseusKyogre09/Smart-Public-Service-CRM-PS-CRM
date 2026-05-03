@@ -23,6 +23,7 @@ import { toPng } from "html-to-image";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { Skeleton } from "../components/ui/skeleton";
 
 function formatDate(value: any) {
   if (!value) return "Recently";
@@ -431,25 +432,112 @@ export default function Profile() {
 
   if (loading && complaints.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-slate-50/50">
-        <div className="mb-4 h-12 w-12 rounded-full border-4 border-slate-200 border-t-sky-600 animate-spin" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-          Syncing Profile...
-        </p>
+      <div className="max-w-6xl mx-auto space-y-10 animate-pulse px-4">
+        {/* Header Skeleton */}
+        <div className="rounded-[40px] border border-slate-100 bg-white p-10 flex flex-col lg:flex-row gap-10 items-center lg:items-end justify-between shadow-sm relative overflow-hidden">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
+            <Skeleton className="h-28 w-28 rounded-[2rem] shadow-lg" />
+            <div className="space-y-4 text-center md:text-left">
+              <Skeleton className="h-5 w-24 rounded-full mx-auto md:mx-0" />
+              <div className="space-y-2">
+                <Skeleton className="h-12 w-64 rounded-2xl" />
+                <Skeleton className="h-5 w-40 rounded-lg" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Skeleton className="h-9 w-44 rounded-full" />
+                <Skeleton className="h-9 w-32 rounded-full" />
+              </div>
+            </div>
+          </div>
+          <div className="w-full lg:w-96 relative z-10">
+            <div className="rounded-[2.5rem] bg-slate-50/50 p-8 border border-slate-100 space-y-5">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="h-12 w-40 rounded-xl" />
+              <div className="space-y-3">
+                <Skeleton className="h-3 w-full rounded-full" />
+                <div className="flex justify-between">
+                  <Skeleton className="h-2 w-1/2 rounded-full" />
+                  <Skeleton className="h-2 w-1/4 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs Skeleton */}
+        <div className="flex gap-10 px-10 border-b border-slate-100 overflow-x-auto">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="pb-4 space-y-2">
+              <Skeleton className="h-5 w-20 rounded-md" />
+              <div className="h-1 w-full bg-transparent" />
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-10">
+            {/* Stats Cards */}
+            <div className="grid gap-4 sm:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white rounded-[2rem] p-6 border border-slate-50 shadow-sm space-y-3">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-12" />
+                </div>
+              ))}
+            </div>
+            {/* Main Section */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm min-h-[400px] space-y-8">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-8 w-48 rounded-xl" />
+                <Skeleton className="h-10 w-32 rounded-full" />
+              </div>
+              <div className="grid gap-6 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-48 rounded-3xl bg-slate-50 border border-slate-100" />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Rankings Sidebar Skeleton */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm space-y-6">
+              <Skeleton className="h-6 w-32 rounded-lg" />
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-full rounded-md" />
+                      <Skeleton className="h-3 w-2/3 rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Skeleton className="h-12 w-full rounded-2xl mt-4" />
+            </div>
+            {/* Logout Skeleton */}
+            <Skeleton className="h-16 w-full rounded-[22px]" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12 px-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12 px-4">
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-blue-100 p-1 shadow-sm"
+        className="relative overflow-hidden rounded-[36px] border border-slate-100 bg-gradient-to-br from-white via-sky-50 to-blue-50/50 p-1 shadow-[0_10px_40px_rgba(0,0,0,0.03)]"
       >
         <div className="relative px-6 py-8 md:px-8 md:py-10 flex flex-col lg:flex-row gap-8 items-center lg:items-end justify-between">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-            <div className="h-24 w-24 flex items-center justify-center rounded-3xl bg-sky-700 text-3xl font-bold text-white shadow-lg shadow-sky-900/20">
+            <div className="h-28 w-28 flex items-center justify-center rounded-[2.5rem] bg-sky-700 text-4xl font-black text-white shadow-[0_20px_40px_rgba(3,105,161,0.25)] border-4 border-white">
               {currentUser.name?.charAt(0)?.toUpperCase()}
             </div>
             <div className="space-y-3">
@@ -458,7 +546,7 @@ export default function Profile() {
                   Citizen Profile
                 </span>
                 <div className="flex items-center gap-3 justify-center md:justify-start">
-                  <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">
                     {currentUser.name}
                   </h1>
                   <span className="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-bold rounded-full border border-sky-200">
@@ -476,8 +564,8 @@ export default function Profile() {
               </div>
             </div>
           </div>
-          <div className="w-full lg:w-auto min-w-[280px]">
-            <div className="rounded-[24px] bg-white p-6 shadow-sm ring-1 ring-slate-200/60 relative overflow-hidden group">
+          <div className="w-full lg:w-auto min-w-[320px]">
+            <div className="rounded-[32px] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-slate-100 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <TrendingUp size={48} className="text-sky-700" />
               </div>
@@ -488,7 +576,7 @@ export default function Profile() {
                   </div>
                   <div className="h-1.5 w-1.5 rounded-full bg-sky-500 animate-pulse" />
                 </div>
-                <div className="text-5xl font-black mb-4 tracking-tighter text-slate-900">
+                <div className="text-6xl font-black mb-4 tracking-tighter text-slate-900">
                   {userStats.reputationScore}
                 </div>
                 <div className="space-y-2">
@@ -496,11 +584,11 @@ export default function Profile() {
                     <span>Progress to Gold</span>
                     <span>{progressPercent}%</span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden ring-1 ring-slate-200">
+                  <div className="h-3 w-full rounded-full bg-slate-50 overflow-hidden border border-slate-100 shadow-inner">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPercent}%` }}
-                      className="h-full bg-sky-700 rounded-full"
+                      className="h-full bg-sky-600 rounded-full shadow-[0_0_15px_rgba(2,132,199,0.4)]"
                     />
                   </div>
                 </div>
@@ -508,7 +596,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
-        <div className="border-t border-slate-200/60 px-8 flex gap-8 bg-white/50 backdrop-blur-sm">
+        <div className="border-t border-slate-100 px-8 flex gap-8 bg-white/40 backdrop-blur-md">
           {["overview", "history", "gallery", "badges", "settings"].map(
             (id) => (
               <button
@@ -516,11 +604,13 @@ export default function Profile() {
                 onClick={() => setActiveTab(id as any)}
                 className={`relative py-4 text-[11px] font-bold transition-all uppercase tracking-widest ${activeTab === id ? "text-sky-700" : "text-slate-400 hover:text-slate-600"}`}
               >
-                {id}
+                <span className={`relative z-10 ${activeTab === id ? "text-sky-700" : "text-slate-400 hover:text-slate-600"}`}>
+                  {id}
+                </span>
                 {activeTab === id && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-sky-700 rounded-t-full"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-sky-600 rounded-t-full shadow-[0_-4px_10px_rgba(2,132,199,0.3)]"
                   />
                 )}
               </button>
@@ -974,7 +1064,7 @@ export default function Profile() {
                           </div>
                         </div>
                       </div>
-                      <div className="px-6 py-2 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em]">
+                      <div className="px-6 py-2 bg-sky-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-sky-600/20">
                         SCAN TO VALIDATE
                       </div>
                     </div>

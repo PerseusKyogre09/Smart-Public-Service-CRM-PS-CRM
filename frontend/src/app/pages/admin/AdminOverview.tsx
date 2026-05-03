@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { appwriteService } from "../../appwriteService";
 import {
@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Activity,
   UserCheck,
+  LayoutDashboard,
 } from "lucide-react";
+import { Skeleton } from "../../components/ui/skeleton";
 import {
   AreaChart,
   Area,
@@ -46,23 +48,24 @@ const KPICard = ({
   suffix,
   subtext,
   color,
+  accent,
   icon: Icon,
   trend,
 }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="bg-white/85 backdrop-blur-xl rounded-[1.75rem] p-5 border border-white shadow-[0_18px_45px_rgba(148,163,184,0.16)]"
+    className={`bg-white rounded-[2rem] p-7 border border-slate-100 border-l-[6px] ${accent} shadow-lg shadow-slate-200/40 group hover:scale-[1.02] transition-all`}
   >
-    <div className="flex items-start justify-between mb-3">
+    <div className="flex items-start justify-between mb-4">
       <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}
+        className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center shadow-sm ${color}`}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-6 h-6" />
       </div>
       {trend && (
         <span
-          className={`text-xs font-[600] px-2 py-0.5 rounded-full ${
+          className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
             trend > 0
               ? "bg-emerald-50 text-emerald-600"
               : "bg-red-50 text-red-600"
@@ -73,12 +76,14 @@ const KPICard = ({
         </span>
       )}
     </div>
-    <div className="text-2xl font-[800] text-slate-900">
+    <div className="text-5xl font-black text-slate-900 tracking-tighter">
       {value}
-      {suffix}
+      <span className="text-2xl font-bold text-slate-300 ml-0.5">{suffix}</span>
     </div>
-    <div className="text-xs text-slate-500 mt-1 font-[500]">{label}</div>
-    {subtext && <div className="text-xs text-slate-400 mt-0.5">{subtext}</div>}
+    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">
+      {label}
+    </div>
+    {subtext && <div className="text-[10px] font-bold text-slate-300 mt-1 uppercase tracking-wider">{subtext}</div>}
   </motion.div>
 );
 
@@ -195,70 +200,96 @@ export default function AdminOverview() {
 
   if (loading && complaints.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-8 text-slate-500">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
-          <div className="h-4 w-32 bg-slate-200 rounded"></div>
+      <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48 rounded-xl" />
+            <Skeleton className="h-4 w-32 rounded-lg" />
+          </div>
+          <Skeleton className="h-12 w-40 rounded-2xl" />
+        </div>
+        <Skeleton className="h-20 w-full rounded-[2rem]" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-[2rem]" />
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Skeleton className="lg:col-span-2 h-80 rounded-[2rem]" />
+          <Skeleton className="h-80 rounded-[2rem]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-[800] text-[#ffcbd1]">Admin Overview</h1>
-          <p className="text-white/90 text-sm mt-1">
+      <div className="flex items-center justify-between px-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/10">
+              <LayoutDashboard size={20} />
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
+              Operational Matrix
+            </h1>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-1">
+            Real-time Systems Oversight · Global Registry
+          </p>
+          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest ml-1 mt-1">
             {new Date().toLocaleDateString("en-IN", {
               weekday: "long",
               day: "numeric",
               month: "long",
-              year: "numeric",
             })}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button
             onClick={() => navigate("/admin/queue")}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[linear-gradient(90deg,#7c3aed,#2563eb)] hover:opacity-95 text-white text-sm font-[700] rounded-2xl transition-all shadow-[0_16px_32px_rgba(76,29,149,0.24)]"
+            className="group flex items-center gap-3 px-8 py-3.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-95"
           >
-            <BarChart3 className="w-4 h-4" />
-            Complaint Queue
+            Manage Queue
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>
 
       {/* Alerts Banner */}
       {breachedCount > 0 || liveKpis.escalated > 0 ? (
-        <div className="bg-[linear-gradient(90deg,rgba(255,241,242,0.96),rgba(255,255,255,0.92))] border border-rose-200 rounded-[1.75rem] p-4 flex items-center gap-4 flex-wrap shadow-[0_18px_40px_rgba(251,113,133,0.08)]">
-          <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-rose-50/80 backdrop-blur-md border border-rose-100 rounded-[2rem] p-6 flex items-center gap-6 shadow-[0_20px_40px_rgba(225,29,72,0.05)]"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-rose-600">
+            <AlertTriangle className="w-7 h-7 animate-pulse" />
           </div>
           <div className="flex-1">
-            <div className="text-sm font-[700] text-red-800">Active Alerts</div>
-            <div className="text-xs text-red-600 mt-0.5">
-              {breachedCount > 0 &&
-                `${breachedCount} complaint${breachedCount > 1 ? "s" : ""} SLA breached`}
-              {breachedCount > 0 && liveKpis.escalated > 0 && " · "}
-              {liveKpis.escalated > 0 && `${liveKpis.escalated} escalated`}
+            <div className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Critical Intervention Required</div>
+            <div className="text-xl font-black text-rose-900 tracking-tight">
+              {breachedCount} Breach Alerts · {liveKpis.escalated} Escalations
             </div>
           </div>
           <button
             onClick={() => navigate("/admin/queue")}
-            className="flex items-center gap-1.5 text-xs font-[700] text-rose-600 hover:text-rose-700"
+            className="px-6 py-3 bg-white rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-600 border border-rose-100 hover:bg-rose-50 transition-colors shadow-sm"
           >
-            Review <ArrowRight className="w-3.5 h-3.5" />
+            Resolve Now
           </button>
-        </div>
+        </motion.div>
       ) : (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-[1.75rem] p-4 flex items-center gap-4">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
+        <div className="bg-emerald-50/80 backdrop-blur-md border border-emerald-100 rounded-[2rem] p-6 flex items-center gap-6 shadow-[0_20px_40px_rgba(16,185,129,0.05)]">
+          <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
+            <CheckCircle className="w-7 h-7" />
           </div>
-          <div className="text-sm font-[700] text-emerald-800">
-            All systems healthy — No active SLA breaches or escalations
+          <div className="flex-1">
+            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Operational Health</div>
+            <div className="text-xl font-black text-emerald-900 tracking-tight">
+              All Systems Nominal · No Breaches
+            </div>
           </div>
         </div>
       )}
@@ -266,35 +297,39 @@ export default function AdminOverview() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label="Total Complaints"
+          label="Total Load"
           value={liveKpis.total}
           suffix=""
           icon={Activity}
-          color="bg-blue-50 text-blue-600"
-          subtext="Synced from DB"
+          color="bg-slate-900 text-white"
+          accent="border-slate-900"
+          subtext="Registry Sync"
         />
         <KPICard
-          label="Resolved"
+          label="Resolved Cycle"
           value={liveKpis.resolved}
           suffix=""
           icon={CheckCircle}
-          color="bg-emerald-50 text-emerald-600"
-          subtext="All time"
+          color="bg-emerald-600 text-white"
+          accent="border-emerald-500"
+          subtext="Processed"
         />
         <KPICard
           label="SLA Compliance"
           value={liveKpis.slaCompliance}
           suffix="%"
           icon={TrendingUp}
-          color="bg-violet-50 text-violet-600"
-          subtext="Target: 80%"
+          color="bg-violet-600 text-white"
+          accent="border-violet-600"
+          subtext="Protocol Fidelity"
         />
         <KPICard
-          label="Pending"
+          label="Backlog"
           value={liveKpis.active}
           suffix=""
           icon={Clock}
-          color="bg-amber-50 text-amber-600"
+          color="bg-rose-600 text-white"
+          accent="border-rose-500"
           subtext={`${liveKpis.escalated} escalated`}
         />
       </div>
@@ -335,78 +370,77 @@ export default function AdminOverview() {
       {/* Charts Row */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Trend Chart - live 7-day */}
-        <div className="lg:col-span-2 bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-5">
-          <div className="flex items-center justify-between mb-5">
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-50 shadow-[0_20px_50px_rgba(0,0,0,0.03)] p-8">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-base font-[700] text-slate-900">
-                Complaint Trends
+              <div className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1">Performance Dynamics</div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                Operational Velocity
               </h3>
-              <p className="text-xs text-slate-400">
-                Last 7 days — live from DB
-              </p>
             </div>
-            <div className="flex gap-3 text-xs">
+            <div className="flex gap-6">
               {[
-                { color: "#3B82F6", label: "Submitted" },
-                { color: "#10B981", label: "Resolved" },
-                { color: "#EF4444", label: "Escalated" },
+                { color: "bg-sky-500", label: "Inflow" },
+                { color: "bg-emerald-500", label: "Resolved" },
               ].map(({ color, label }) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="text-slate-500">{label}</span>
+                <div key={label} className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
                 </div>
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={260}>
             <ComposedChart data={liveTrendData}>
               <defs>
                 <linearGradient id="colorSubmitted" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2} />
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
                   <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.15} />
                   <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f8fafc" vertical={false} />
               <XAxis
                 dataKey="day"
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 700 }}
                 axisLine={false}
                 tickLine={false}
+                dy={10}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 700 }}
                 axisLine={false}
                 tickLine={false}
+                dx={-10}
               />
               <Tooltip
                 contentStyle={{
-                  background: "#1e293b",
+                  background: "#ffffff",
                   border: "none",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  color: "#f1f5f9",
+                  borderRadius: "16px",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                  fontSize: "11px",
+                  fontWeight: "bold",
                 }}
               />
               <Area
                 type="monotone"
                 dataKey="submitted"
                 stroke="#3B82F6"
-                strokeWidth={2}
+                strokeWidth={3}
                 fill="url(#colorSubmitted)"
+                dot={{ r: 4, fill: "#3B82F6", strokeWidth: 2, stroke: "#fff" }}
               />
               <Area
                 type="monotone"
                 dataKey="resolved"
                 stroke="#10B981"
-                strokeWidth={2}
+                strokeWidth={3}
                 fill="url(#colorResolved)"
+                dot={{ r: 4, fill: "#10B981", strokeWidth: 2, stroke: "#fff" }}
               />
               <Bar
                 dataKey="escalated"
@@ -419,56 +453,59 @@ export default function AdminOverview() {
         </div>
 
         {/* Category Pie - live */}
-        <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-5">
-          <div className="mb-4">
-            <h3 className="text-base font-[700] text-slate-900">By Category</h3>
-            <p className="text-xs text-slate-400">Live breakdown</p>
+        <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-[0_20px_50px_rgba(0,0,0,0.03)] p-8 flex flex-col">
+          <div className="mb-6">
+            <div className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1">Issue Distribution</div>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Focus Areas</h3>
           </div>
           {liveCategoryBreakdown.length === 0 ? (
-            <div className="flex items-center justify-center h-[160px] text-slate-400 text-sm">
-              No data yet
+            <div className="flex-1 flex items-center justify-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+              Waiting for Data...
             </div>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie
-                    data={liveCategoryBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
-                    dataKey="value"
-                    paddingAngle={2}
-                  >
-                    {liveCategoryBreakdown.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: "#1e293b",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      color: "#f1f5f9",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="mt-2 space-y-1.5">
+              <div className="flex-1 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={liveCategoryBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      dataKey="value"
+                      paddingAngle={4}
+                    >
+                      {liveCategoryBreakdown.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "#fff",
+                        border: "none",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+                        fontSize: "10px",
+                        fontWeight: "bold",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-6 space-y-2">
                 {liveCategoryBreakdown
-                  .slice(0, 5)
+                  .slice(0, 4)
                   .map(({ name, value, color }) => (
-                    <div key={name} className="flex items-center gap-2">
+                    <div key={name} className="flex items-center gap-3">
                       <div
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: color }}
                       />
-                      <span className="text-xs text-slate-600 flex-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1">
                         {name}
                       </span>
-                      <span className="text-xs font-[700] text-slate-700">
+                      <span className="text-xs font-black text-slate-900">
                         {value}%
                       </span>
                     </div>
@@ -480,56 +517,55 @@ export default function AdminOverview() {
       </div>
 
       {/* Manager Workload (live) + Escalations */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-8">
         {/* Manager Workload */}
-        <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-slate-100">
-            <h3 className="text-base font-[700] text-slate-900">
-              Manager Workload
-            </h3>
+        <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-[0_20px_50px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between p-8 border-b border-slate-50">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1">Human Capital</div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Staff Utilization</h3>
+            </div>
             <button
               onClick={() => navigate("/admin/managers")}
-              className="text-xs text-violet-600 hover:text-violet-700 font-[600] flex items-center gap-1"
+              className="h-10 w-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-sky-50 hover:text-sky-600 transition-all flex items-center justify-center"
             >
-              View All <ChevronRight className="w-3 h-3" />
+              <ChevronRight size={20} />
             </button>
           </div>
           <div className="divide-y divide-slate-50">
             {managerWorkload.length === 0 ? (
-              <div className="py-10 text-center text-sm text-slate-400">
-                No assigned complaints yet
+              <div className="py-16 text-center text-[10px] font-black uppercase tracking-widest text-slate-300">
+                Awaiting Assignments
               </div>
             ) : (
               managerWorkload.map((mgr) => (
                 <div
                   key={mgr.name}
                   onClick={() => navigate("/admin/managers")}
-                  className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-slate-50 transition-colors group"
+                  className="flex items-center gap-4 px-8 py-5 cursor-pointer hover:bg-slate-50 transition-colors group"
                 >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white text-xs font-[700]">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-sm font-black shadow-sm group-hover:bg-sky-600 group-hover:text-white transition-all">
                     {mgr.name
                       .split(" ")
                       .map((n: string) => n[0])
                       .join("")}
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-[600] text-slate-800 group-hover:text-sky-600 transition-colors">
+                    <div className="text-sm font-black text-slate-800">
                       {mgr.name}
                     </div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorized Field Officer</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-sm font-[700] text-amber-600">
-                      {mgr.active}
+                  <div className="flex gap-6">
+                    <div className="text-right">
+                      <div className="text-sm font-black text-amber-600">{mgr.active}</div>
+                      <div className="text-[9px] font-black text-slate-300 uppercase">Load</div>
                     </div>
-                    <div className="text-xs text-slate-400">active</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm font-[700] text-emerald-600">
-                      {mgr.resolved}
+                    <div className="text-right">
+                      <div className="text-sm font-black text-emerald-600">{mgr.resolved}</div>
+                      <div className="text-[9px] font-black text-slate-300 uppercase">Fixed</div>
                     </div>
-                    <div className="text-xs text-slate-400">resolved</div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500" />
                 </div>
               ))
             )}
@@ -537,24 +573,25 @@ export default function AdminOverview() {
         </div>
 
         {/* Escalated / Overdue (live) */}
-        <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-slate-100">
-            <h3 className="text-base font-[700] text-slate-900">
-              Escalations &amp; Overdue
-            </h3>
+        <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-[0_20px_50px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between p-8 border-b border-slate-50">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-1">Operational Risks</div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Active Escalations</h3>
+            </div>
             <button
               onClick={() => navigate("/admin/queue")}
-              className="text-xs text-violet-600 hover:text-violet-700 font-[600] flex items-center gap-1"
+              className="h-10 w-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center"
             >
-              View Queue <ChevronRight className="w-3 h-3" />
+              <ChevronRight size={20} />
             </button>
           </div>
           <div className="divide-y divide-slate-50">
             {complaints.filter(
               (c) => c.escalated || (c.slaRemainingHours ?? 1) < 0,
             ).length === 0 ? (
-              <div className="py-10 text-center text-sm text-slate-400">
-                No escalations or overdue complaints 🎉
+              <div className="py-16 text-center text-[10px] font-black uppercase tracking-widest text-emerald-500">
+                Operational Stability Confirmed
               </div>
             ) : (
               complaints
@@ -563,29 +600,30 @@ export default function AdminOverview() {
                 .map((c) => (
                   <div
                     key={c.id}
-                    className="flex items-center gap-4 px-5 py-3.5"
+                    className="flex items-center gap-4 px-8 py-5 hover:bg-slate-50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/admin/complaint/${c.id}`)}
                   >
                     <div
-                      className={`w-2 h-10 rounded-full ${c.escalated ? "bg-red-500" : "bg-amber-500"}`}
+                      className={`w-1.5 h-12 rounded-full ${c.escalated ? "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.3)]" : "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]"}`}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-[600] text-slate-800">
-                        {c.id}
+                      <div className="text-sm font-black text-slate-800 tracking-tight">
+                        #{c.id.slice(-6).toUpperCase()}
                       </div>
-                      <div className="text-xs text-slate-400 truncate">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
                         {c.category} · {c.address}
                       </div>
                     </div>
-                    <div>
+                    <div className="text-right">
                       <div
-                        className={`text-xs font-[700] ${c.escalated ? "text-red-600" : "text-amber-600"}`}
+                        className={`text-[10px] font-black uppercase tracking-widest ${c.escalated ? "text-rose-600" : "text-amber-600"}`}
                       >
                         {c.escalated
-                          ? "🔴 Escalated"
+                          ? "Escalated"
                           : `${Math.abs(c.slaRemainingHours || 0)}h Overdue`}
                       </div>
-                      <div className="text-xs text-slate-400 text-right">
-                        {c.area || "Delhi Zone"}
+                      <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                        {c.area || "NCT Zone"}
                       </div>
                     </div>
                   </div>

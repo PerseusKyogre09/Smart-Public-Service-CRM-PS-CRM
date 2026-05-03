@@ -1,7 +1,11 @@
 import os
 import asyncio
 import httpx
+import warnings
 from fastapi import FastAPI
+
+# Silence deprecation warnings from SDK transition
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 from fastapi.middleware.cors import CORSMiddleware
 from routes.complaints import router as complaints_router
 from routes.stats import router as stats_router

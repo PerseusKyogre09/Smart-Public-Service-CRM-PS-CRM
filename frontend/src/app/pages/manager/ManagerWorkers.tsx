@@ -21,7 +21,7 @@ import {
 } from "../../data/mockData";
 import { appwriteService } from "../../appwriteService";
 import { account } from "../../appwrite";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 export default function ManagerWorkers() {

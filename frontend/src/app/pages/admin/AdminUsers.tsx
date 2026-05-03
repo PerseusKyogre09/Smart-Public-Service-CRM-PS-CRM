@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import {
   Search,
   AlertTriangle,
@@ -8,6 +8,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { appwriteService } from "../../appwriteService";
+import { Skeleton } from "../../components/ui/skeleton";
+import { Users } from "lucide-react";
 
 const mockUsers = [
   {
@@ -151,116 +153,141 @@ export default function AdminUsers() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Loading users...</p>
+      <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48 rounded-xl" />
+            <Skeleton className="h-4 w-32 rounded-lg" />
+          </div>
+          <Skeleton className="h-12 w-40 rounded-2xl" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-[2rem]" />
+          ))}
+        </div>
+        <Skeleton className="h-20 w-full rounded-[2rem]" />
+        <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-sm overflow-hidden">
+          <div className="p-8 space-y-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-[800] text-[#ffcbd1]">User Management</h1>
-        <p className="text-white/90 text-sm mt-1">
-          Monitor citizens, volunteers, and field officers
-        </p>
+    <div className="max-w-7xl mx-auto space-y-10 pb-12">
+      <div className="flex items-center justify-between px-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-900/10">
+              <Users size={20} />
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Citizen Registry</h1>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-1">
+            Governance Framework · Stakeholder Management
+          </p>
+        </div>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
         {[
           {
-            label: "Total Users",
+            label: "Verified Population",
             value: users.length,
-            color: "text-blue-600",
-            bg: "bg-blue-50",
+            color: "text-slate-900",
+            border: "border-slate-900",
+            desc: "Active Registry"
           },
           {
-            label: "Tier 2+ Citizens",
+            label: "Elite Tier (2+)",
             value: users.filter((u) => u.tier >= 2).length,
-            color: "text-violet-600",
-            bg: "bg-violet-50",
+            color: "text-indigo-600",
+            border: "border-indigo-500",
+            desc: "Priority Citizens"
           },
           {
-            label: "Flagged Accounts",
+            label: "Policy Flags",
             value: users.filter((u) => u.status === "Flagged").length,
-            color: "text-amber-600",
-            bg: "bg-amber-50",
+            color: "text-rose-600",
+            border: "border-rose-500",
+            desc: "Compliance Alert"
           },
           {
-            label: "Avg Reputation",
+            label: "Civic Reputation",
             value: users.length > 0 ? Math.round(
               users.reduce((a, u) => a + u.reputation, 0) /
-                users.length,
+              users.length,
             ) : 0,
             color: "text-emerald-600",
-            bg: "bg-emerald-50",
+            border: "border-emerald-500",
+            desc: "Social Health"
           },
-        ].map(({ label, value, color, bg }) => (
+        ].map(({ label, value, color, border, desc }) => (
           <div
             key={label}
-            className="bg-white/88 backdrop-blur-xl rounded-[1.75rem] p-4 border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)]"
+            className={`bg-white rounded-[2rem] p-7 border border-slate-100 border-l-[6px] ${border} shadow-lg shadow-slate-200/40`}
           >
-            <div className={`text-2xl font-[800] ${color}`}>{value}</div>
-            <div className="text-xs text-slate-500 font-[500] mt-1">
+            <div className={`text-4xl font-black tracking-tighter ${color}`}>{value}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">
               {label}
             </div>
+            <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1">{desc}</div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] p-4 flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-sm p-3 flex flex-wrap gap-4 items-center">
+        <div className="relative flex-1 min-w-[280px] group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
           <input
             type="text"
-            placeholder="Search by name, ID, or area..."
+            placeholder="Search registry by name, identifier, or ward..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-violet-400 transition-colors"
+            className="w-full h-14 pl-14 pr-6 text-sm font-bold bg-slate-50/50 border border-slate-100 rounded-2xl focus:outline-none focus:bg-white focus:border-indigo-200 transition-all"
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none text-slate-700 cursor-pointer"
+          className="h-14 px-6 text-[10px] font-black uppercase tracking-widest bg-white border border-slate-100 rounded-2xl focus:outline-none text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
         >
-          <option value="All">All Status</option>
-          <option value="Active">Active</option>
-          <option value="Flagged">Flagged</option>
-          <option value="Suspended">Suspended</option>
+          <option value="All">Status: Comprehensive</option>
+          <option value="Active">Status: Active Only</option>
+          <option value="Flagged">Status: Flagged Only</option>
+          <option value="Suspended">Status: Suspended Only</option>
         </select>
       </div>
 
       {/* Users Table */}
-      <div className="bg-white/88 backdrop-blur-xl rounded-[1.85rem] border border-white shadow-[0_18px_45px_rgba(148,163,184,0.14)] overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-5 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  User
+              <tr className="bg-slate-50/50">
+                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Stakeholder
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Tier
+                <th className="text-center px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Authority
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Reputation
+                <th className="text-right px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Civic Rep
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Reports
+                <th className="text-right px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Engagement
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Area
+                <th className="text-center px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Registry Status
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-[700] text-slate-500 uppercase tracking-wider">
+                <th className="text-center px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Actions
                 </th>
               </tr>

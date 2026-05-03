@@ -1,5 +1,5 @@
 import { ID, OAuthProvider } from "appwrite";
-import { account } from "./appwrite";
+import { account, client, DATABASE_ID, COMPLAINTS_COLLECTION_ID } from "./appwrite";
 import { api } from "./api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -107,28 +107,37 @@ export const appwriteService = {
     this.getAllComplaints(lat, lng, radius)
       .then(callback)
       .catch(() => callback([]));
-    // Poll every 60s (Increased from 15s to save resources)
-    const interval = setInterval(() => {
-      this.getAllComplaints(lat, lng, radius)
-        .then(callback)
-        .catch(() => callback([]));
-    }, 60_000);
-    return () => clearInterval(interval);
+    
+    // Proper Realtime Subscription
+    return client.subscribe(
+      `databases.${DATABASE_ID}.collections.${COMPLAINTS_COLLECTION_ID}.documents`,
+      () => {
+        // Re-fetch all matching complaints when any change happens
+        this.getAllComplaints(lat, lng, radius)
+          .then(callback)
+          .catch(() => { });
+      }
+    );
   },
 
   subscribeToUserComplaints(
     userId: string,
     callback: (complaints: any[]) => void,
   ) {
+    // Initial fetch
     this.getComplaintsByUser(userId)
       .then(callback)
       .catch(() => callback([]));
-    const interval = setInterval(() => {
-      this.getComplaintsByUser(userId)
-        .then(callback)
-        .catch(() => callback([]));
-    }, 60_000);
-    return () => clearInterval(interval);
+
+    // Proper Realtime Subscription
+    return client.subscribe(
+      `databases.${DATABASE_ID}.collections.${COMPLAINTS_COLLECTION_ID}.documents`,
+      () => {
+        this.getComplaintsByUser(userId)
+          .then(callback)
+          .catch(() => { });
+      }
+    );
   },
 
   async getComplaintById(id: string): Promise<any> {
