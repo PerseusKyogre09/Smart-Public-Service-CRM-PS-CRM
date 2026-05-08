@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate, Outlet, NavLink } from "react-router";
 import { LayoutDashboard, Users, LogOut, Shield, Menu, X } from "lucide-react";
 import { account } from "../../appwrite";
@@ -9,7 +9,7 @@ const navItems = [
   { to: "/manager/workers", icon: Users, label: "My Workers" },
 ];
 
-import CivicAIAssistant from "../dashboard/CivicAIAssistant";
+const CivicAIAssistant = lazy(() => import("../dashboard/CivicAIAssistant"));
 
 export default function ManagerLayout() {
   const navigate = useNavigate();
@@ -161,7 +161,9 @@ export default function ManagerLayout() {
         </div>
       </main>
 
-      <CivicAIAssistant type="manager" />
+      <Suspense fallback={null}>
+        <CivicAIAssistant type="manager" />
+      </Suspense>
     </div>
   );
 }

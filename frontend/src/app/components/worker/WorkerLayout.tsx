@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import { Outlet } from "react-router";
 import {
@@ -14,7 +14,7 @@ import {
 import { account } from "../../appwrite";
 import { motion, AnimatePresence } from "motion/react";
 
-import CivicAIAssistant from "../dashboard/CivicAIAssistant";
+const CivicAIAssistant = lazy(() => import("../dashboard/CivicAIAssistant"));
 
 export default function WorkerLayout() {
   const navigate = useNavigate();
@@ -174,7 +174,9 @@ export default function WorkerLayout() {
         <Outlet />
       </main>
 
-      <CivicAIAssistant type="worker" />
+      <Suspense fallback={null}>
+        <CivicAIAssistant type="worker" />
+      </Suspense>
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 mt-auto">

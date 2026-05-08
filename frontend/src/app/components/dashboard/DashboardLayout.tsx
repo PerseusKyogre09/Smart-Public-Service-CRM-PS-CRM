@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router";
 import { ChevronDown, LogOut, Menu, Plus, Shield, X } from "lucide-react";
 import { account } from "../../appwrite";
 import { authService } from "../../appwriteService";
 import { motion, AnimatePresence } from "framer-motion";
-import CivicAIAssistant from "./CivicAIAssistant";
+const CivicAIAssistant = lazy(() => import("./CivicAIAssistant"));
 
 const navItems = [
   { to: "/dashboard", label: "Home", end: true },
@@ -231,7 +231,9 @@ export default function DashboardLayout() {
         </AnimatePresence>
       </main>
 
-      <CivicAIAssistant />
+      <Suspense fallback={null}>
+        <CivicAIAssistant />
+      </Suspense>
     </div>
   );
 }

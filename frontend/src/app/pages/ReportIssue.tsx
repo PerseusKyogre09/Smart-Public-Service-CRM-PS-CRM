@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "sonner";
-import { toPng } from "html-to-image";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { appwriteService } from "../appwriteService";
@@ -793,6 +792,7 @@ export default function ReportIssue() {
           // Wait for a small delay to ensure the card's ticket ID is rendered
           await new Promise((r) => setTimeout(r, 500));
 
+          const { toPng } = await import("html-to-image");
           const dataUrl = await toPng(reportRef.current, {
             cacheBust: true,
             quality: 1,

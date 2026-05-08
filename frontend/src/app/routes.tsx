@@ -1,29 +1,31 @@
 import { createBrowserRouter } from "react-router";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import DashboardLayout from "./components/dashboard/DashboardLayout";
-import CitizenHome from "./pages/CitizenHome";
-import ReportIssue from "./pages/ReportIssue";
-import MyComplaints from "./pages/MyComplaints";
-import ComplaintDetail from "./pages/ComplaintDetail";
-import Profile from "./pages/Profile";
-import AdminLayout from "./components/admin/AdminLayout";
-import AdminOverview from "./pages/admin/AdminOverview";
-import AdminQueue from "./pages/admin/AdminQueue";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminSLA from "./pages/admin/AdminSLA";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminManagers from "./pages/admin/AdminManagers";
-import ManagerLayout from "./components/manager/ManagerLayout";
-import ManagerOverview from "./pages/manager/ManagerOverview";
-import ManagerWorkers from "./pages/manager/ManagerWorkers";
-import WorkerLayout from "./components/worker/WorkerLayout";
-import WorkerDashboard from "./pages/worker/WorkerDashboard";
-import WorkerResolved from "./pages/worker/WorkerResolved";
-import WorkerProfile from "./pages/worker/WorkerProfile";
-import NotFound from "./pages/NotFound";
-import OAuthCallback from "./pages/OAuthCallback";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { lazy } from "react";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const DashboardLayout = lazy(() => import("./components/dashboard/DashboardLayout"));
+const CitizenHome = lazy(() => import("./pages/CitizenHome"));
+const ReportIssue = lazy(() => import("./pages/ReportIssue"));
+const MyComplaints = lazy(() => import("./pages/MyComplaints"));
+const ComplaintDetail = lazy(() => import("./pages/ComplaintDetail"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
+const AdminQueue = lazy(() => import("./pages/admin/AdminQueue"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminSLA = lazy(() => import("./pages/admin/AdminSLA"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminManagers = lazy(() => import("./pages/admin/AdminManagers"));
+const ManagerLayout = lazy(() => import("./components/manager/ManagerLayout"));
+const ManagerOverview = lazy(() => import("./pages/manager/ManagerOverview"));
+const ManagerWorkers = lazy(() => import("./pages/manager/ManagerWorkers"));
+const WorkerLayout = lazy(() => import("./components/worker/WorkerLayout"));
+const WorkerDashboard = lazy(() => import("./pages/worker/WorkerDashboard"));
+const WorkerResolved = lazy(() => import("./pages/worker/WorkerResolved"));
+const WorkerProfile = lazy(() => import("./pages/worker/WorkerProfile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const OAuthCallback = lazy(() => import("./pages/OAuthCallback"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 
 export const router = createBrowserRouter([
   { path: "/", Component: LandingPage },

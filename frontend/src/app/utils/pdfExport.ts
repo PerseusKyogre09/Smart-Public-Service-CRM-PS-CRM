@@ -1,7 +1,4 @@
-import { toPng } from "html-to-image";
-
-// @ts-ignore
-import jsPDF from "jspdf";
+// Dynamically import heavy libs (html-to-image, jspdf) inside functions
 
 export const exportToPDF = async (
   elementId: string,
@@ -9,6 +6,9 @@ export const exportToPDF = async (
   title: string,
 ) => {
   try {
+    const { toPng } = await import("html-to-image");
+    // @ts-ignore
+    const { default: jsPDF } = await import("jspdf");
     const element = document.getElementById(elementId);
     if (!element) {
       console.error(`Element with id ${elementId} not found`);
@@ -79,6 +79,8 @@ export const exportDataToPDF = async (
   },
 ) => {
   try {
+    // @ts-ignore
+    const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF({
       orientation: "landscape",
       unit: "mm",

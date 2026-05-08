@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { toPng } from "html-to-image";
 import { appwriteService } from "../appwriteService";
 import { account } from "../appwrite";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -268,6 +267,7 @@ export default function Profile() {
       // Ensure the report template has time to update with the new complaint id if needed
       await new Promise((r) => setTimeout(r, 300));
 
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(reportRef.current, {
         cacheBust: true,
         backgroundColor: "#ffffff",
@@ -366,6 +366,7 @@ export default function Profile() {
       // Small timeout to ensure the report-to-be-rendered is visible if needed
       await new Promise((r) => setTimeout(r, 100));
 
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(reportRef.current, {
         cacheBust: true,
         backgroundColor: "#ffffff",
@@ -393,6 +394,7 @@ export default function Profile() {
       // Small timeout to ensure the element exists
       await new Promise((r) => setTimeout(r, 400));
 
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(badgeRef.current, {
         cacheBust: true,
         quality: 1,

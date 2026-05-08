@@ -5,7 +5,6 @@ import { account } from "../appwrite";
 import { api } from "../api";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import { toPng } from "html-to-image";
 import {
   CheckCircle,
   Star,
@@ -260,6 +259,7 @@ export default function ComplaintDetail() {
     await new Promise((r) => setTimeout(r, 120));
 
     try {
+      const { toPng } = await import("html-to-image");
       return await toPng(shareCardRef.current, {
         cacheBust: true,
         backgroundColor: "#ffffff",
@@ -273,6 +273,7 @@ export default function ComplaintDetail() {
       });
     } catch {
       // Retry without evidence image when third-party image CORS taints canvas.
+      const { toPng } = await import("html-to-image");
       return await toPng(shareCardRef.current, {
         cacheBust: true,
         backgroundColor: "#ffffff",
